@@ -75,6 +75,8 @@
     self.resumesWithGeofence.enabled = NO;
     self.discardPointsWithinDistance.enabled = NO;
     self.discardPointsWithinSeconds.enabled = NO;
+    self.discardDistanceSlider.enabled = NO;
+    self.discardSecondsSlider.enabled = NO;
     self.enableNotifications.enabled = NO;
     self.locationAuthorizationStatus.enabled = NO;
     self.locationAuthorizationStatusWarning.enabled = NO;
@@ -96,6 +98,8 @@
     self.resumesWithGeofence.enabled = YES;
     self.discardPointsWithinDistance.enabled = YES;
     self.discardPointsWithinSeconds.enabled = YES;
+    self.discardDistanceSlider.enabled = YES;
+    self.discardSecondsSlider.enabled = YES;
     self.enableNotifications.enabled = YES;
     self.locationAuthorizationStatus.enabled = YES;
     self.locationAuthorizationStatusWarning.enabled = YES;
@@ -115,6 +119,11 @@
             self.locationAuthorizationStatusSection.hidden = true;
         }
     }
+}
+
+- (BOOL)preciseSettings {
+    NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
+    return [standardUserDefaults boolForKey:GLPreciseSettingsDefaults];
 }
 
 - (void)updateVisibleSettings {
@@ -183,38 +192,41 @@
     self.resumesWithGeofence.selectedSegmentIndex = gIdx;
     
     CLLocationDistance discardDistance = [GLManager sharedManager].discardPointsWithinDistance;
-    int dIdx = 0;
-    switch((int)discardDistance) {
-        case -1:
-            dIdx = 0; break;
-        case 1:
-            dIdx = 1; break;
-        case 10:
-            dIdx = 2; break;
-        case 50:
-            dIdx = 3; break;
-        case 100:
-            dIdx = 4; break;
-        case 500:
-            dIdx = 5; break;
+    NSInteger distanceIndex = 0;
+    if (discardDistance == -1) {
+        distanceIndex = 0;
+    } else if (discardDistance < 10) {  // Any value from 1 up to (but not including) 10
+        distanceIndex = 1;
+    } else if (discardDistance < 50) {  // Values 10 up to 49 will yield index 2
+        distanceIndex = 2;
+    } else if (discardDistance < 100) { // 50 to 99 → index 3
+        distanceIndex = 3;
+    } else if (discardDistance < 500) { // 100 to 499 → index 4
+        distanceIndex = 4;
+    } else {                          // 500 or above → index 5
+        distanceIndex = 5;
     }
-    self.discardPointsWithinDistance.selectedSegmentIndex = dIdx;
+    self.discardPointsWithinDistance.selectedSegmentIndex = distanceIndex;
     
     int discardSeconds = [GLManager sharedManager].discardPointsWithinSeconds;
-    switch(discardSeconds) {
-        case 1:
-            self.discardPointsWithinSeconds.selectedSegmentIndex = 0; break;
-        case 5:
-            self.discardPointsWithinSeconds.selectedSegmentIndex = 1; break;
-        case 10:
-            self.discardPointsWithinSeconds.selectedSegmentIndex = 2; break;
-        case 30:
-            self.discardPointsWithinSeconds.selectedSegmentIndex = 3; break;
-        case 60:
-            self.discardPointsWithinSeconds.selectedSegmentIndex = 4; break;
-        case 120:
-            self.discardPointsWithinSeconds.selectedSegmentIndex = 5; break;
+    NSInteger secondsIndex = 0;
+    if (discardSeconds < 5) {         // 1 to 4 seconds rounds to index 0
+        secondsIndex = 0;
+    } else if (discardSeconds < 10) { // 5 to 9 seconds → index 1
+        secondsIndex = 1;
+    } else if (discardSeconds < 30) { // 10 to 29 seconds → index 2
+        secondsIndex = 2;
+    } else if (discardSeconds < 60) { // 30 to 59 seconds → index 3
+        secondsIndex = 3;
+    } else if (discardSeconds < 120) { // 60 to 119 seconds → index 4
+        secondsIndex = 4;
+    } else {                         // 120 seconds or more → index 5
+        secondsIndex = 5;
     }
+    self.discardPointsWithinSeconds.selectedSegmentIndex = secondsIndex;
+    
+    self.discardDistanceSlider.value = [GLManager sharedManager].discardPointsWithinDistance;
+    self.discardSecondsSlider.value = [GLManager sharedManager].discardPointsWithinSeconds;
     
     CLLocationAccuracy d = [GLManager sharedManager].desiredAccuracy;
     if(d == kCLLocationAccuracyBestForNavigation) {
@@ -242,6 +254,29 @@
         self.pointsPerBatchControl.selectedSegmentIndex = 3;
     } else if(pointsPerBatch == 1000) {
         self.pointsPerBatchControl.selectedSegmentIndex = 4;
+    }
+    
+    BOOL usePrecise = [self preciseSettings];
+        
+    // Toggle discardPointsWithinDistance UI: show slider if precise, segmented control otherwise.
+    self.discardPointsWithinDistance.hidden = usePrecise;
+    self.discardDistanceSlider.hidden = !usePrecise;
+    
+    if (usePrecise) {
+        self.discardDistanceSlider.value = [GLManager sharedManager].discardPointsWithinDistance;
+        self.discardDistanceValueLabel.text = [NSString stringWithFormat:@"Min Distance Between Points: %.0f m", self.discardDistanceSlider.value];
+        self.discardSecondsValueLabel.text = [NSString stringWithFormat:@"Min Time Between Points: %.0f m", self.discardSecondsSlider.value];
+    } else {
+        self.discardDistanceValueLabel.text = @"Min Distance Between Points";
+        self.discardSecondsValueLabel.text = @"Min Time Between Points";
+    }
+    
+    // Similarly, do the same for discardPointsWithinSeconds.
+    self.discardPointsWithinSeconds.hidden = usePrecise;
+    self.discardSecondsSlider.hidden = !usePrecise;
+    
+    if (usePrecise) {
+        self.discardSecondsSlider.value = [GLManager sharedManager].discardPointsWithinSeconds;
     }
 }
 
@@ -385,6 +420,18 @@
             distance = 500; break;
     }
     [GLManager sharedManager].discardPointsWithinDistance = distance;
+}
+
+- (IBAction)discardPointsWithinDistancePreciseWasChanged:(UISlider *)sender {
+    int roundedValue = (int)roundf(sender.value);
+    [GLManager sharedManager].discardPointsWithinDistance = roundedValue;
+    self.discardDistanceValueLabel.text = [NSString stringWithFormat:@"Min Distance Between Points: %d m", roundedValue];
+}
+
+- (IBAction)discardPointsWithinSecondsPreciseWasChanged:(UISlider *)sender {
+    int roundedValue = (int)roundf(sender.value);
+    [GLManager sharedManager].discardPointsWithinSeconds = roundedValue;
+    self.discardSecondsValueLabel.text = [NSString stringWithFormat:@"Min Time Between Points: %d s", roundedValue];
 }
 
 - (IBAction)discardPointsWithinSecondsWasChanged:(UISegmentedControl *)sender {

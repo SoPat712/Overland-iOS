@@ -24,6 +24,10 @@
 @property (strong, nonatomic) IBOutlet UISegmentedControl *resumesWithGeofence;
 @property (strong, nonatomic) IBOutlet UISegmentedControl *discardPointsWithinDistance;
 @property (strong, nonatomic) IBOutlet UISegmentedControl *discardPointsWithinSeconds;
+@property (strong, nonatomic) IBOutlet UISlider *discardDistanceSlider;
+@property (strong, nonatomic) IBOutlet UISlider *discardSecondsSlider;
+@property (strong, nonatomic) IBOutlet UILabel *discardDistanceValueLabel;
+@property (strong, nonatomic) IBOutlet UILabel *discardSecondsValueLabel;
 @property (strong, nonatomic) IBOutlet UISwitch *enableNotifications;
 @property (strong, nonatomic) IBOutlet UIStackView *locationAuthorizationStatusSection;
 @property (strong, nonatomic) IBOutlet UILabel *locationAuthorizationStatus;
@@ -43,6 +47,8 @@
 - (IBAction)resumeWithGeofenceWasChanged:(UISegmentedControl *)sender;
 - (IBAction)discardPointsWithinDistanceWasChanged:(UISegmentedControl *)sender;
 - (IBAction)discardPointsWithinSecondsWasChanged:(UISegmentedControl *)sender;
+- (IBAction)discardPointsWithinDistancePreciseWasChanged:(UISlider *)sender;
+- (IBAction)discardPointsWithinSecondsPreciseWasChanged:(UISlider *)sender;
 - (IBAction)toggleNotificationsEnabled:(UISwitch *)sender;
 - (IBAction)requestLocationPermissionsWasPressed:(UIButton *)sender;
 - (IBAction)privacyPolicyWasPressed:(UIButton *)sender;
