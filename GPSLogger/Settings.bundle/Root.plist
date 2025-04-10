@@ -10,7 +10,7 @@
 			<key>Type</key>
 			<string>PSToggleSwitchSpecifier</string>
 			<key>Title</key>
-			<string>Precise settings</string>
+			<string>Precise Settings</string>
 			<key>Key</key>
 			<string>GLPreciseSettingsDefaults</string>
 			<key>DefaultValue</key>
