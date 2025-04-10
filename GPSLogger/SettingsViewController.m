@@ -265,7 +265,7 @@
     if (usePrecise) {
         self.discardDistanceSlider.value = [GLManager sharedManager].discardPointsWithinDistance;
         self.discardDistanceValueLabel.text = [NSString stringWithFormat:@"Min Distance Between Points: %.0f m", self.discardDistanceSlider.value];
-        self.discardSecondsValueLabel.text = [NSString stringWithFormat:@"Min Time Between Points: %.0f m", self.discardSecondsSlider.value];
+        self.discardSecondsValueLabel.text = [NSString stringWithFormat:@"Min Time Between Points: %.0f s", self.discardSecondsSlider.value];
     } else {
         self.discardDistanceValueLabel.text = @"Min Distance Between Points";
         self.discardSecondsValueLabel.text = @"Min Time Between Points";
