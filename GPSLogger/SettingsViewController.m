@@ -75,8 +75,12 @@
     self.resumesWithGeofence.enabled = NO;
     self.discardPointsWithinDistance.enabled = NO;
     self.discardPointsWithinSeconds.enabled = NO;
+    self.discardPointsOutsideAccuracy.enabled = NO;
     self.discardDistanceSlider.enabled = NO;
     self.discardSecondsSlider.enabled = NO;
+    self.discardAccuracySlider.enabled = NO;
+    self.stopsAutomatically.enabled = NO;
+    self.stopsAutomaticallyAfter.enabled = NO;
     self.enableNotifications.enabled = NO;
     self.locationAuthorizationStatus.enabled = NO;
     self.locationAuthorizationStatusWarning.enabled = NO;
@@ -98,12 +102,27 @@
     self.resumesWithGeofence.enabled = YES;
     self.discardPointsWithinDistance.enabled = YES;
     self.discardPointsWithinSeconds.enabled = YES;
+    self.discardPointsOutsideAccuracy.enabled = YES;
     self.discardDistanceSlider.enabled = YES;
     self.discardSecondsSlider.enabled = YES;
+    self.discardAccuracySlider.enabled = YES;
     self.enableNotifications.enabled = YES;
     self.locationAuthorizationStatus.enabled = YES;
     self.locationAuthorizationStatusWarning.enabled = YES;
     self.requestLocationPermissionsButton.enabled = YES;
+    
+    if (self.continuousTrackingMode.selectedSegmentIndex == 3) {
+        self.stopsAutomatically.enabled = YES;
+        
+        if (self.stopsAutomatically.selectedSegmentIndex != 0) {
+            self.stopsAutomaticallyAfter.enabled = YES;
+        } else {
+            self.stopsAutomaticallyAfter.enabled = NO;
+        }
+    } else {
+        self.stopsAutomatically.enabled = NO;
+        self.stopsAutomaticallyAfter.enabled = NO;
+    }
 }
 
 - (void)authorizationStatusChanged {
@@ -225,8 +244,60 @@
     }
     self.discardPointsWithinSeconds.selectedSegmentIndex = secondsIndex;
     
+    CLLocationAccuracy discardAccuracy = [GLManager sharedManager].discardPointsOutsideAccuracy;
+    NSInteger accuracyIndex = 0;
+    if (discardAccuracy == -1) {
+        accuracyIndex = 0;
+    } else if (discardAccuracy < 50) {  // Any value from 1 up to (but not including) 50
+        accuracyIndex = 1;
+    } else if (discardAccuracy < 100) {  // Values 50 up to 99 will yield index 2
+        accuracyIndex = 2;
+    } else if (discardAccuracy < 500) { // 100 to 499 → index 3
+        accuracyIndex = 3;
+    } else if (discardAccuracy < 1000) { // 499 to 1000 → index 4
+        accuracyIndex = 4;
+    } else {                          // 1000 or above → index 5
+        accuracyIndex = 5;
+    }
+    self.discardPointsOutsideAccuracy.selectedSegmentIndex = accuracyIndex;
+    
     self.discardDistanceSlider.value = [GLManager sharedManager].discardPointsWithinDistance;
     self.discardSecondsSlider.value = [GLManager sharedManager].discardPointsWithinSeconds;
+    self.discardAccuracySlider.value = [GLManager sharedManager].discardPointsOutsideAccuracy;
+    
+    
+    CLLocationDistance stopRadius = [GLManager sharedManager].stopsAutomaticallyRadius;
+    NSInteger stopRadiusIndex = 0;
+    if (stopRadius == -1) {
+        stopRadiusIndex = 0;
+    } else if (stopRadius < 20) {  // Any value from 1 up to (but not including) 20
+        stopRadiusIndex = 1;
+    } else if (stopRadius < 50) {  // Values 20 up to 49 will yield index 2
+        stopRadiusIndex = 2;
+    } else if (stopRadius < 100) { // 50 to 99 → index 3
+        stopRadiusIndex = 3;
+    } else if (stopRadius < 200) { // 100 to 199 → index 4
+        stopRadiusIndex = 4;
+    } else {                          // 200 or above → index 5
+        stopRadiusIndex = 5;
+    }
+    self.stopsAutomatically.selectedSegmentIndex = stopRadiusIndex;
+    
+    
+    CLLocationDistance stopAfter = [GLManager sharedManager].stopsAutomaticallyAfterSeconds;
+    NSInteger stopAfterIndex = 0;
+    if (stopAfter < 60*2) {  // Any value from 1 up to (but not including) 2 minutes
+        stopAfterIndex = 0;
+    } else if (stopAfter < 60*5) {  // Values 2min up to 5min will yield index 2
+        stopAfterIndex = 1;
+    } else if (stopAfter < 60*10) { // 5min to 10min → index 3
+        stopAfterIndex = 2;
+    } else if (stopAfter < 60*20) { // 10min to 20min → index 4
+        stopAfterIndex = 3;
+    } else {                          // 20min or above → index 5
+        stopAfterIndex = 4;
+    }
+    self.stopsAutomaticallyAfter.selectedSegmentIndex = stopAfterIndex;
     
     CLLocationAccuracy d = [GLManager sharedManager].desiredAccuracy;
     if(d == kCLLocationAccuracyBestForNavigation) {
@@ -262,22 +333,36 @@
     self.discardPointsWithinDistance.hidden = usePrecise;
     self.discardDistanceSlider.hidden = !usePrecise;
     
-    if (usePrecise) {
-        self.discardDistanceSlider.value = [GLManager sharedManager].discardPointsWithinDistance;
-        self.discardDistanceValueLabel.text = [NSString stringWithFormat:@"Min Distance Between Points: %.0f m", self.discardDistanceSlider.value];
-        self.discardSecondsValueLabel.text = [NSString stringWithFormat:@"Min Time Between Points: %.0f s", self.discardSecondsSlider.value];
-    } else {
-        self.discardDistanceValueLabel.text = @"Min Distance Between Points";
-        self.discardSecondsValueLabel.text = @"Min Time Between Points";
-    }
-    
     // Similarly, do the same for discardPointsWithinSeconds.
     self.discardPointsWithinSeconds.hidden = usePrecise;
     self.discardSecondsSlider.hidden = !usePrecise;
     
+    // Analog for accuracy
+    self.discardPointsOutsideAccuracy.hidden = usePrecise;
+    self.discardAccuracySlider.hidden = !usePrecise;
+    
+    
     if (usePrecise) {
+        self.discardDistanceSlider.value = [GLManager sharedManager].discardPointsWithinDistance;
         self.discardSecondsSlider.value = [GLManager sharedManager].discardPointsWithinSeconds;
+        self.discardAccuracySlider.value = [GLManager sharedManager].discardPointsOutsideAccuracy;
+        if (self.discardDistanceSlider.value <= 0) {
+            self.discardDistanceValueLabel.text = @"Min Distance Between Points: Off";
+        } else {
+            self.discardDistanceValueLabel.text = [NSString stringWithFormat:@"Min Distance Between Points: %.0f m", self.discardDistanceSlider.value];
+        }
+        self.discardSecondsValueLabel.text = [NSString stringWithFormat:@"Min Time Between Points: %.0f s", self.discardSecondsSlider.value];
+        if (self.discardAccuracySlider.value <= 0) {
+            self.discardAccuracyValueLabel.text = @"Max Accuracy of Points: Off";
+        } else {
+            self.discardAccuracyValueLabel.text = [NSString stringWithFormat:@"Max Accuracy of Points: %.0f m", self.discardAccuracySlider.value];
+        }
+    } else {
+        self.discardDistanceValueLabel.text = @"Min Distance Between Points";
+        self.discardSecondsValueLabel.text = @"Min Time Between Points";
+        self.discardAccuracyValueLabel.text = @"Max Accuracy of Points";
     }
+    
 }
 
 - (IBAction)toggleLogging:(UISegmentedControl *)sender {
@@ -379,6 +464,9 @@
             m = kGLTrackingModeStandardAndSignificant; break;
     }
     [GLManager sharedManager].trackingMode = m;
+    
+    self.stopsAutomatically.enabled = m == kGLTrackingModeStandardAndSignificant;
+    self.stopsAutomaticallyAfter.enabled = self.stopsAutomatically.selectedSegmentIndex != 0;
 }
 
 - (IBAction)visitTrackingWasChanged:(UISegmentedControl *)sender {
@@ -425,7 +513,78 @@
 - (IBAction)discardPointsWithinDistancePreciseWasChanged:(UISlider *)sender {
     int roundedValue = (int)roundf(sender.value);
     [GLManager sharedManager].discardPointsWithinDistance = roundedValue;
+    if (roundedValue <= 0) {
+        self.discardDistanceValueLabel.text = @"Min Distance Between Points: Off";
+        return;
+    }
     self.discardDistanceValueLabel.text = [NSString stringWithFormat:@"Min Distance Between Points: %d m", roundedValue];
+}
+
+- (IBAction)discardPointsOutsideAccuracyWasChanged:(UISegmentedControl *)sender {
+    CLLocationAccuracy accuracy = -1;
+    switch(sender.selectedSegmentIndex) {
+        case 0:
+            accuracy = -1; break;
+        case 1:
+            accuracy = 10; break;
+        case 2:
+            accuracy = 50; break;
+        case 3:
+            accuracy = 100; break;
+        case 4:
+            accuracy = 500; break;
+        case 5:
+            accuracy = 1000; break;
+    }
+    [GLManager sharedManager].discardPointsOutsideAccuracy = accuracy;
+}
+
+- (IBAction)discardPointsOutsideAccuracyPreciseWasChanged:(UISlider *)sender {
+    int roundedValue = (int)roundf(sender.value);
+    [GLManager sharedManager].discardPointsOutsideAccuracy = roundedValue;
+    if (roundedValue <= 0) {
+        self.discardAccuracyValueLabel.text = @"Max Accuracy of Points: Off";
+        return;
+    }
+    self.discardAccuracyValueLabel.text = [NSString stringWithFormat:@"Max Accuracy of Points: %d m", roundedValue];
+}
+
+- (IBAction)stopsAutomaticallyWasChanged:(UISegmentedControl *)sender {
+    CLLocationDistance distance = -1;
+    switch(sender.selectedSegmentIndex) {
+        case 0:
+            distance = -1; break;
+        case 1:
+            distance = 10; break;
+        case 2:
+            distance = 20; break;
+        case 3:
+            distance = 50; break;
+        case 4:
+            distance = 100; break;
+        case 5:
+            distance = 200; break;
+    }
+    [GLManager sharedManager].stopsAutomaticallyRadius = distance;
+    
+    self.stopsAutomaticallyAfter.enabled = sender.selectedSegmentIndex != 0;
+}
+
+- (IBAction)stopsAutomaticallyAfterWasChanged:(UISegmentedControl *)sender {
+    int seconds = -1;
+    switch(sender.selectedSegmentIndex) {
+        case 0:
+            seconds = 60; break;
+        case 1:
+            seconds = 60*2; break;
+        case 2:
+            seconds = 60*5; break;
+        case 3:
+            seconds = 60*10; break;
+        case 4:
+            seconds = 60*20; break;
+    }
+    [GLManager sharedManager].stopsAutomaticallyAfterSeconds = seconds;
 }
 
 - (IBAction)discardPointsWithinSecondsPreciseWasChanged:(UISlider *)sender {
