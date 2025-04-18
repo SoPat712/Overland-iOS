@@ -424,20 +424,20 @@ const double MPH_to_METERSPERSECOND = 0.447;
         
         NSDictionary *stopsRadiusBlocks = @{
             @"off": ^{ self.stopsAutomaticallyRadius = -1; },
-            @"10m": ^{ self.stopsAutomaticallyRadius = 1; },
+            @"10m": ^{ self.stopsAutomaticallyRadius = 10; },
             @"20m": ^{ self.stopsAutomaticallyRadius = 20; },
             @"50m": ^{ self.stopsAutomaticallyRadius = 50; },
             @"100m": ^{ self.stopsAutomaticallyRadius = 100; },
             @"200m": ^{ self.stopsAutomaticallyRadius = 200; },
         };
         [self runBlock:stopsRadiusBlocks fromDictionary:main forKey:@"stop_radius"];
-        
+
         NSDictionary *stopsTimeBlocks = @{
-            @"1min": ^{ self.discardPointsWithinSeconds = 60; },
-            @"2min": ^{ self.discardPointsWithinSeconds = 60*2; },
-            @"5min": ^{ self.discardPointsWithinSeconds = 60*5; },
-            @"10min": ^{ self.discardPointsWithinSeconds = 60*10; },
-            @"20min": ^{ self.discardPointsWithinSeconds = 60*20; },
+            @"1min": ^{ self.stopsAutomaticallyAfterSeconds = 60; },
+            @"2min": ^{ self.stopsAutomaticallyAfterSeconds = 60*2; },
+            @"5min": ^{ self.stopsAutomaticallyAfterSeconds = 60*5; },
+            @"10min": ^{ self.stopsAutomaticallyAfterSeconds = 60*10; },
+            @"20min": ^{ self.stopsAutomaticallyAfterSeconds = 60*20; },
         };
         [self runBlock:stopsTimeBlocks fromDictionary:main forKey:@"stop_time"];
 
@@ -1857,11 +1857,11 @@ const double MPH_to_METERSPERSECOND = 0.447;
                      },
              @"properties": [NSMutableDictionary dictionaryWithDictionary:@{
                      @"timestamp": timestamp,
-                     @"altitude": [NSNumber numberWithInt:(int)round(loc.altitude)],
-                     @"speed": [NSNumber numberWithDouble:((int)(loc.speed * 100)) / 100.0],
-                     @"course": [NSNumber numberWithInt:(int)round(loc.course)],
-                     @"horizontal_accuracy": [NSNumber numberWithInt:(int)round(loc.horizontalAccuracy)],
-                     @"vertical_accuracy": [NSNumber numberWithInt:(int)round(loc.verticalAccuracy)],
+                     @"altitude": [NSNumber numberWithDouble:((int)(loc.altitude * 1000)) / 1000.0],
+                     @"speed": [NSNumber numberWithDouble:((int)(loc.speed * 1000)) / 1000.0],
+                     @"course": [NSNumber numberWithDouble:((int)(loc.course * 1000)) / 1000.0],
+                     @"horizontal_accuracy": [NSNumber numberWithDouble:((int)(loc.horizontalAccuracy * 1000)) / 1000.0],
+                     @"vertical_accuracy": [NSNumber numberWithDouble:((int)(loc.verticalAccuracy * 1000)) / 1000.0],
                      @"speed_accuracy": [NSNumber numberWithDouble:((int)(loc.speedAccuracy * 100)) / 100.0],
                      @"course_accuracy": [NSNumber numberWithDouble:((int)(loc.courseAccuracy * 100)) / 100.0],
                      @"motion": [self motionArrayFromLastMotion],
