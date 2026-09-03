@@ -812,6 +812,10 @@ const double MPH_to_METERSPERSECOND = 0.447;
     [[NSNotificationCenter defaultCenter] postNotificationName:GLSendingStartedNotification object:self];
 }
 
+- (long)currentPointsInQueue {
+    return _currentPointsInQueue;
+}
+
 - (void)sendingFinished {
     self.sendInProgress = NO;
     [[NSNotificationCenter defaultCenter] postNotificationName:GLSendingFinishedNotification object:self];

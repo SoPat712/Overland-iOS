@@ -159,6 +159,7 @@ typedef void (^CaseBlock)(void);
 @property (strong, nonatomic, readonly) NSString *lastMotionString;
 @property (strong, nonatomic, readonly) NSNumber *lastStepCount;
 @property (strong, nonatomic, readonly) NSDate *lastSentDate;
+@property (nonatomic, readonly) long currentPointsInQueue;
 @property (strong, nonatomic, readonly) NSString *lastLocationName;
 
 - (void)startAllUpdates;

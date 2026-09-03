@@ -11,6 +11,8 @@
 #import "SceneDelegate.h"
 #import "GLManager.h"
 #import "NSArray+map.h"
+#import "Overland-Swift.h"
+@import SwiftUI;
 
 @implementation SceneDelegate
 
@@ -114,6 +116,11 @@
 
 - (void)scene:(UIScene *)scene willConnectToSession:(UISceneSession *)session options:(UISceneConnectionOptions *)connectionOptions {
     // If the app isn’t already loaded, it’s launched and passes details of the shortcut item in through the connectionOptions parameter of the scene:willConnectToSession:options: function.
+
+    UIWindowScene *windowScene = (UIWindowScene *)scene;
+    self.window = [[UIWindow alloc] initWithWindowScene:windowScene];
+    self.window.rootViewController = [OverlandRootHosting makeRoot];
+    [self.window makeKeyAndVisible];
 
     if(connectionOptions.shortcutItem != nil) {
         NSLog(@"App launched. connectionOptions = %@", connectionOptions);

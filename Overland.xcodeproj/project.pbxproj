@@ -17,6 +17,12 @@
 		0FAC1FEB2B255CA60007F3B1 /* NSArray+map.m in Sources */ = {isa = PBXBuildFile; fileRef = 0FAC1FEA2B255CA60007F3B1 /* NSArray+map.m */; };
 		0FCAFE00F00D0000000000B1 /* WifiZoneListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000A1 /* WifiZoneListView.swift */; };
 		0FCAFE00F00D0000000000D1 /* OverlandLocationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000C1 /* OverlandLocationEngine.swift */; };
+		0FCAFE00F00D0000000000F1 /* GLManagerBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000E1 /* GLManagerBridge.swift */; };
+		0FCAFE00F00D0000000000F2 /* OverlandRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000E2 /* OverlandRootView.swift */; };
+		0FCAFE00F00D0000000000F3 /* TrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000E3 /* TrackerView.swift */; };
+		0FCAFE00F00D0000000000F4 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000E4 /* SettingsView.swift */; };
+		0FCAFE00F00D0000000000F5 /* EndpointView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000E5 /* EndpointView.swift */; };
+		0FCAFE00F00D0000000000F6 /* TripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000E6 /* TripView.swift */; };
 		0FAC1FEE2B25FBB50007F3B1 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0FAC1FED2B25FBB50007F3B1 /* SceneDelegate.m */; };
 		0FB85AC01BE0151800F25126 /* ExternalAccessory.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FB85ABF1BE0151800F25126 /* ExternalAccessory.framework */; };
 		0FCF53251F81AB0800577A0F /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FCF53241F81AB0800577A0F /* UserNotifications.framework */; };
@@ -55,6 +61,12 @@
 		0FAC1FEA2B255CA60007F3B1 /* NSArray+map.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSArray+map.m"; sourceTree = "<group>"; };
 		0FCAFE00F00D0000000000A1 /* WifiZoneListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiZoneListView.swift; sourceTree = "<group>"; };
 		0FCAFE00F00D0000000000C1 /* OverlandLocationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlandLocationEngine.swift; sourceTree = "<group>"; };
+		0FCAFE00F00D0000000000E1 /* GLManagerBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GLManagerBridge.swift; sourceTree = "<group>"; };
+		0FCAFE00F00D0000000000E2 /* OverlandRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlandRootView.swift; sourceTree = "<group>"; };
+		0FCAFE00F00D0000000000E3 /* TrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerView.swift; sourceTree = "<group>"; };
+		0FCAFE00F00D0000000000E4 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		0FCAFE00F00D0000000000E5 /* EndpointView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndpointView.swift; sourceTree = "<group>"; };
+		0FCAFE00F00D0000000000E6 /* TripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripView.swift; sourceTree = "<group>"; };
 		0FAC1FEC2B255D460007F3B1 /* NSArray+map.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSArray+map.h"; sourceTree = "<group>"; };
 		0FAC1FED2B25FBB50007F3B1 /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
 		0FAC1FEF2B25FBC10007F3B1 /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
@@ -193,6 +205,12 @@
 				0FFD31721BAB7BEA009B3A03 /* GLManager.m */,
 				0FCAFE00F00D0000000000A1 /* WifiZoneListView.swift */,
 				0FCAFE00F00D0000000000C1 /* OverlandLocationEngine.swift */,
+				0FCAFE00F00D0000000000E1 /* GLManagerBridge.swift */,
+				0FCAFE00F00D0000000000E2 /* OverlandRootView.swift */,
+				0FCAFE00F00D0000000000E3 /* TrackerView.swift */,
+				0FCAFE00F00D0000000000E4 /* SettingsView.swift */,
+				0FCAFE00F00D0000000000E5 /* EndpointView.swift */,
+				0FCAFE00F00D0000000000E6 /* TripView.swift */,
 				0FAC1FEC2B255D460007F3B1 /* NSArray+map.h */,
 				0FAC1FEA2B255CA60007F3B1 /* NSArray+map.m */,
 				0FFD31611BAB7A34009B3A03 /* Main.storyboard */,
@@ -354,6 +372,12 @@
 				0FFD31731BAB7BEA009B3A03 /* GLManager.m in Sources */,
 				0FCAFE00F00D0000000000B1 /* WifiZoneListView.swift in Sources */,
 				0FCAFE00F00D0000000000D1 /* OverlandLocationEngine.swift in Sources */,
+				0FCAFE00F00D0000000000F1 /* GLManagerBridge.swift in Sources */,
+				0FCAFE00F00D0000000000F2 /* OverlandRootView.swift in Sources */,
+				0FCAFE00F00D0000000000F3 /* TrackerView.swift in Sources */,
+				0FCAFE00F00D0000000000F4 /* SettingsView.swift in Sources */,
+				0FCAFE00F00D0000000000F5 /* EndpointView.swift in Sources */,
+				0FCAFE00F00D0000000000F6 /* TripView.swift in Sources */,
 				0FCF532E1F83FDBC00577A0F /* EndpointViewController.m in Sources */,
 				0F444F0C1BD04A7E00106C2E /* TripModeViewController.m in Sources */,
 				0FAC1FEE2B25FBB50007F3B1 /* SceneDelegate.m in Sources */,

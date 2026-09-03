@@ -1628,7 +1628,7 @@ For details on the format of the data this app sends to the server, please visit
         <!--Tip Jar View Controller-->
         <scene sceneID="PtT-wV-OXz">
             <objects>
-                <viewController id="MT6-GK-gB7" customClass="TipJarViewController" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="TipJarViewController" id="MT6-GK-gB7" customClass="TipJarViewController" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="Xra-sf-v3F"/>
                         <viewControllerLayoutGuide type="bottom" id="ZY2-42-sso"/>
@@ -1882,7 +1882,7 @@ For details on the format of the data this app sends to the server, please visit
         <!--Trip Settings-->
         <scene sceneID="7b0-Lh-i2K">
             <objects>
-                <viewController id="Y9g-jV-OC3" customClass="TripSettingsViewController" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="TripSettingsViewController" id="Y9g-jV-OC3" customClass="TripSettingsViewController" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="VYw-GA-qnT"/>
                         <viewControllerLayoutGuide type="bottom" id="wcv-S6-8KS"/>
