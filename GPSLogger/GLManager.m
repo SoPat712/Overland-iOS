@@ -162,11 +162,30 @@ const double MPH_to_METERSPERSECOND = 0.447;
     }];
     
     NSMutableDictionary *postData;
-    
+
+    if(locationUpdates.count == 0) {
+        self.batchInProgress = NO;
+        return;
+    }
+
     if(self.loggingModeCurrentValue == kGLLoggingModeOwntracks) {
         postData = locationUpdates[0];
     } else {
         postData = [NSMutableDictionary dictionaryWithDictionary:@{@"locations": locationUpdates}];
+
+        // Report the actual number of locations sent in this batch, since the value
+        // stored at queue time only reflects the size of the delegate callback.
+        // Objects from the database are immutable, so replace them with mutable copies.
+        for(int i=0; i<(int)locationUpdates.count; i++) {
+            NSDictionary *update = locationUpdates[i];
+            NSDictionary *properties = [update objectForKey:@"properties"];
+            if(properties == nil) continue;
+            NSMutableDictionary *newProperties = [properties mutableCopy];
+            [newProperties setValue:[NSNumber numberWithLong:locationUpdates.count] forKey:@"locations_in_payload"];
+            NSMutableDictionary *newUpdate = [update mutableCopy];
+            [newUpdate setValue:newProperties forKey:@"properties"];
+            [locationUpdates replaceObjectAtIndex:i withObject:newUpdate];
+        }
         
         // If there are still more in the queue, then send the current location as a separate property.
         // This allows the server to know where the user is immediately even if there are many thousands of points in the backlog.
@@ -1876,7 +1895,7 @@ const double MPH_to_METERSPERSECOND = 0.447;
         @"_type": @"location",
         @"lat": [NSNumber numberWithDouble:((int)(loc.coordinate.latitude * 10000000)) / 10000000.0],
         @"lon": [NSNumber numberWithDouble:((int)(loc.coordinate.longitude * 10000000)) / 10000000.0],
-        @"tst": [NSNumber numberWithInt:(int)loc.timestamp.timeIntervalSinceReferenceDate],
+        @"tst": [NSNumber numberWithDouble:loc.timestamp.timeIntervalSince1970],
         @"acc": [NSNumber numberWithInt:(int)round(loc.horizontalAccuracy)],
         @"batt": [NSNumber numberWithInt:[[self currentBatteryLevel] doubleValue] * 100],
     }];
