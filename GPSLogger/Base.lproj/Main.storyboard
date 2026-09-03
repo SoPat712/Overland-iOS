@@ -1433,7 +1433,7 @@ IAogA
                                                 <rect key="frame" x="0.0" y="1933" width="335" height="30"/>
                                                 <state key="normal" title="Configure Wifi Zone"/>
                                                 <connections>
-                                                    <segue destination="oUs-hC-YpK" kind="show" id="sxM-Q3-YNd"/>
+                                                    <action selector="wifiZoneButtonWasTapped:" destination="8rJ-Kc-sve" eventType="touchUpInside" id="wzM-Q3-Act"/>
                                                 </connections>
                                             </button>
                                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ihE-UQ-Vcc">

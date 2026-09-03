@@ -15,6 +15,7 @@
 		0FABDE372B329422003ACD20 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FABDE362B329422003ACD20 /* StoreKit.framework */; };
 		0FABDE3A2B329448003ACD20 /* TipJarViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0FABDE392B329448003ACD20 /* TipJarViewController.m */; };
 		0FAC1FEB2B255CA60007F3B1 /* NSArray+map.m in Sources */ = {isa = PBXBuildFile; fileRef = 0FAC1FEA2B255CA60007F3B1 /* NSArray+map.m */; };
+		0FCAFE00F00D0000000000B1 /* WifiZoneListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000A1 /* WifiZoneListView.swift */; };
 		0FAC1FEE2B25FBB50007F3B1 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0FAC1FED2B25FBB50007F3B1 /* SceneDelegate.m */; };
 		0FB85AC01BE0151800F25126 /* ExternalAccessory.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FB85ABF1BE0151800F25126 /* ExternalAccessory.framework */; };
 		0FCF53251F81AB0800577A0F /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FCF53241F81AB0800577A0F /* UserNotifications.framework */; };
@@ -51,6 +52,7 @@
 		0FABDE392B329448003ACD20 /* TipJarViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TipJarViewController.m; sourceTree = "<group>"; };
 		0FABDE3B2B34F642003ACD20 /* Tips.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Tips.storekit; sourceTree = "<group>"; };
 		0FAC1FEA2B255CA60007F3B1 /* NSArray+map.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSArray+map.m"; sourceTree = "<group>"; };
+		0FCAFE00F00D0000000000A1 /* WifiZoneListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiZoneListView.swift; sourceTree = "<group>"; };
 		0FAC1FEC2B255D460007F3B1 /* NSArray+map.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSArray+map.h"; sourceTree = "<group>"; };
 		0FAC1FED2B25FBB50007F3B1 /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
 		0FAC1FEF2B25FBC10007F3B1 /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
@@ -187,6 +189,7 @@
 				0FABDE392B329448003ACD20 /* TipJarViewController.m */,
 				0FFD31711BAB7BEA009B3A03 /* GLManager.h */,
 				0FFD31721BAB7BEA009B3A03 /* GLManager.m */,
+				0FCAFE00F00D0000000000A1 /* WifiZoneListView.swift */,
 				0FAC1FEC2B255D460007F3B1 /* NSArray+map.h */,
 				0FAC1FEA2B255CA60007F3B1 /* NSArray+map.m */,
 				0FFD31611BAB7A34009B3A03 /* Main.storyboard */,
@@ -346,6 +349,7 @@
 				0FABDE3A2B329448003ACD20 /* TipJarViewController.m in Sources */,
 				0FAC1FEB2B255CA60007F3B1 /* NSArray+map.m in Sources */,
 				0FFD31731BAB7BEA009B3A03 /* GLManager.m in Sources */,
+				0FCAFE00F00D0000000000B1 /* WifiZoneListView.swift in Sources */,
 				0FCF532E1F83FDBC00577A0F /* EndpointViewController.m in Sources */,
 				0F444F0C1BD04A7E00106C2E /* TripModeViewController.m in Sources */,
 				0FAC1FEE2B25FBB50007F3B1 /* SceneDelegate.m in Sources */,

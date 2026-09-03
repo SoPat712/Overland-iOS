@@ -67,6 +67,7 @@ static NSString *const GLTripTrackingEnabledDefaultsName = @"GLTripTrackingEnabl
 static NSString *const GLTripModeDefaultsName = @"GLTripModeDefaults";
 static NSString *const GLTripStartTimeDefaultsName = @"GLTripStartTimeDefaults";
 static NSString *const GLTripStartLocationDefaultsName = @"GLTripStartLocationDefaults";
+static NSString *const GLWifiZonesDefaultsName = @"WifiZones";
 
 static NSString *const GLTripModeWalk = @"walk";
 static NSString *const GLTripModeRun = @"run";
@@ -114,6 +115,7 @@ typedef void (^CaseBlock)(void);
 + (GLManager *)sharedManager;
 
 + (NSString *)currentWifiHotSpotName;
++ (NSDictionary *)currentWifiNetworkInfo;
 
 @property (strong, nonatomic, readonly) CLLocationManager *locationManager;
 @property (strong, nonatomic, readonly) CMMotionActivityManager *motionActivityManager;
@@ -188,7 +190,11 @@ typedef void (^CaseBlock)(void);
 @property (strong, nonatomic, readonly) NSString *wifiZoneName;
 @property (strong, nonatomic, readonly) NSString *wifiZoneLatitude;
 @property (strong, nonatomic, readonly) NSString *wifiZoneLongitude;
+@property (strong, nonatomic, readonly) NSArray<NSDictionary<NSString *, NSString *> *> *wifiZones;
 - (void)saveNewWifiZone:(NSString *)name withLatitude:(NSString *)latitude andLongitude:(NSString *)longitude;
+- (void)addWifiZoneWithName:(NSString *)name latitude:(NSString *)latitude longitude:(NSString *)longitude bssid:(NSString * _Nullable)bssid;
+- (void)removeWifiZoneAtIndex:(NSInteger)index;
+- (CLLocation *)currentLocationFromWifiName:(NSString *)wifi bssid:(NSString *)bssid;
 
 #pragma mark - Trips
 

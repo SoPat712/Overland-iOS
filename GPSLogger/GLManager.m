@@ -1699,7 +1699,8 @@ const double MPH_to_METERSPERSECOND = 0.447;
         
     // If a wifi override is configured, replace the input location list with the location in the wifi mapping
     if([GLManager currentWifiHotSpotName]) {
-        CLLocation *wifiLocation = [self currentLocationFromWifiName:[GLManager currentWifiHotSpotName]];
+        NSDictionary *wifiInfo = [GLManager currentWifiNetworkInfo];
+        CLLocation *wifiLocation = [self currentLocationFromWifiName:wifiInfo[@"SSID"] bssid:wifiInfo[@"BSSID"]];
         if(wifiLocation) {
             locations = @[wifiLocation];
         }
@@ -2106,19 +2107,18 @@ const double MPH_to_METERSPERSECOND = 0.447;
  also be used to pause location updates when the user gets home.
 */
 
-- (CLLocation *)currentLocationFromWifiName:(NSString *)wifi {
-    if(wifi == nil) {
+- (CLLocation *)currentLocationFromWifiName:(NSString *)wifi bssid:(NSString *)bssid {
+    if(wifi == nil && bssid == nil) {
         return nil;
     }
-    
-    if(self.wifiZoneName) {
-    
-        if([self.wifiZoneName isEqualToString:wifi]) {
-            double latitude = [self.wifiZoneLatitude floatValue];
-            double longitude = [self.wifiZoneLongitude floatValue];
-            CLLocationCoordinate2D coord = CLLocationCoordinate2DMake(latitude, longitude);
+
+    for(NSDictionary *zone in self.wifiZones) {
+        BOOL nameMatches = wifi != nil && [zone[@"name"] isEqualToString:wifi];
+        BOOL bssidMatches = bssid != nil && zone[@"bssid"] != nil && [zone[@"bssid"] isEqualToString:bssid];
+        if(nameMatches || bssidMatches) {
+            CLLocationCoordinate2D coord = CLLocationCoordinate2DMake([zone[@"latitude"] doubleValue], [zone[@"longitude"] doubleValue]);
             NSDate *timestamp = NSDate.date;
-            
+
             CLLocation *loc = [[CLLocation alloc] initWithCoordinate:coord
                                                             altitude:-1
                                                   horizontalAccuracy:1
@@ -2129,24 +2129,84 @@ const double MPH_to_METERSPERSECOND = 0.447;
             return loc;
         }
     }
-    
+
     return nil;
 }
 
+- (NSArray<NSDictionary<NSString *, NSString *> *> *)wifiZones {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSArray *zones = [defaults arrayForKey:GLWifiZonesDefaultsName];
+    if(zones == nil) {
+        // migrate the single legacy wifi zone over to the list
+        NSString *name = [defaults objectForKey:@"WifiZoneName"];
+        if(name) {
+            NSDictionary *zone = @{@"name": name,
+                                   @"latitude": [defaults objectForKey:@"WifiZoneLatitude"] ?: @"0",
+                                   @"longitude": [defaults objectForKey:@"WifiZoneLongitude"] ?: @"0"};
+            zones = @[zone];
+            [defaults setObject:zones forKey:GLWifiZonesDefaultsName];
+            [defaults removeObjectForKey:@"WifiZoneName"];
+            [defaults removeObjectForKey:@"WifiZoneLatitude"];
+            [defaults removeObjectForKey:@"WifiZoneLongitude"];
+        } else {
+            zones = @[];
+        }
+    }
+    return zones;
+}
+
+- (void)saveWifiZones:(NSArray<NSDictionary<NSString *, NSString *> *> *)zones {
+    [[NSUserDefaults standardUserDefaults] setObject:zones forKey:GLWifiZonesDefaultsName];
+}
+
+- (void)addWifiZoneWithName:(NSString *)name latitude:(NSString *)latitude longitude:(NSString *)longitude bssid:(NSString *)bssid {
+    if(name.length == 0) {
+        return;
+    }
+
+    NSMutableArray *zones = [NSMutableArray arrayWithArray:self.wifiZones];
+    NSMutableDictionary *zone = [NSMutableDictionary dictionaryWithDictionary:@{
+        @"name": name,
+        @"latitude": latitude ?: @"0",
+        @"longitude": longitude ?: @"0",
+    }];
+    if(bssid.length > 0) {
+        zone[@"bssid"] = bssid;
+    }
+    for(int i=0; i<(int)zones.count; i++) {
+        if([zones[i][@"name"] isEqualToString:name]) {
+            [zones replaceObjectAtIndex:i withObject:zone];
+            [self saveWifiZones:zones];
+            return;
+        }
+    }
+    [zones addObject:zone];
+    [self saveWifiZones:zones];
+}
+
+- (void)removeWifiZoneAtIndex:(NSInteger)index {
+    NSMutableArray *zones = [NSMutableArray arrayWithArray:self.wifiZones];
+    if(index < 0 || index >= (NSInteger)zones.count) {
+        return;
+    }
+    [zones removeObjectAtIndex:index];
+    [self saveWifiZones:zones];
+}
+
 - (void)saveNewWifiZone:(NSString *)name withLatitude:(NSString *)latitude andLongitude:(NSString *)longitude {
-    
-    [[NSUserDefaults standardUserDefaults] setObject:name forKey:@"WifiZoneName"];
-    [[NSUserDefaults standardUserDefaults] setObject:latitude forKey:@"WifiZoneLatitude"];
-    [[NSUserDefaults standardUserDefaults] setObject:longitude forKey:@"WifiZoneLongitude"];
+    if(name.length == 0) {
+        return;
+    }
+    [self addWifiZoneWithName:name latitude:latitude longitude:longitude bssid:nil];
 }
 - (NSString *)wifiZoneName {
-    return [[NSUserDefaults standardUserDefaults] objectForKey:@"WifiZoneName"];
+    return self.wifiZones.firstObject[@"name"];
 }
 - (NSString *)wifiZoneLatitude {
-    return [[NSUserDefaults standardUserDefaults] objectForKey:@"WifiZoneLatitude"];
+    return self.wifiZones.firstObject[@"latitude"];
 }
 - (NSString *)wifiZoneLongitude {
-    return [[NSUserDefaults standardUserDefaults] objectForKey:@"WifiZoneLongitude"];
+    return self.wifiZones.firstObject[@"longitude"];
 }
 
 
@@ -2158,15 +2218,19 @@ const double MPH_to_METERSPERSECOND = 0.447;
 }
 
 + (NSString *)currentWifiHotSpotName {
-    NSString *wifiName = @"";
+    return [self currentWifiNetworkInfo][@"SSID"];
+}
+
+// iOS redacts SSID/BSSID without location permission and the wifi-info entitlement
++ (NSDictionary *)currentWifiNetworkInfo {
     NSArray *ifs = (__bridge_transfer id)CNCopySupportedInterfaces();
     for (NSString *ifnam in ifs) {
         NSDictionary *info = (__bridge_transfer id)CNCopyCurrentNetworkInfo((__bridge CFStringRef)ifnam);
-        if (info[@"SSID"]) {
-            wifiName = info[@"SSID"];
+        if(info[@"SSID"]) {
+            return info;
         }
     }
-    return wifiName;
+    return @{};
 }
 
 #pragma mark - FMDB

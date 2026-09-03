@@ -9,6 +9,7 @@
 
 #import "SettingsViewController.h"
 #import "GLManager.h"
+#import "Overland-Swift.h"
 
 #import  <Intents/Intents.h>
 #import <SafariServices/SafariServices.h>
@@ -666,6 +667,10 @@
     SFSafariViewController *safariViewController = [[SFSafariViewController alloc] initWithURL:url];
     // safariViewController.delegate = self;
     [self presentViewController:safariViewController animated:YES completion:nil];
+}
+
+- (IBAction)wifiZoneButtonWasTapped:(UIButton *)sender {
+    [WifiZoneLauncher presentFrom:self];
 }
 
 @end
