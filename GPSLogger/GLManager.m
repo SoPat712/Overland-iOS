@@ -12,6 +12,7 @@
 #import "LOLDatabase.h"
 #import "FMDatabase.h"
 #import "SystemConfiguration/CaptiveNetwork.h"
+#import "Overland-Swift.h"
 @import UserNotifications;
 
 @interface GLManager()
@@ -126,8 +127,22 @@ const double MPH_to_METERSPERSECOND = 0.447;
 
 - (void)refreshLocation {
     NSLog(@"Trying to update location now");
-    [self.locationManager stopUpdatingLocation];
-    [self.locationManager performSelector:@selector(startUpdatingLocation) withObject:nil afterDelay:1.0];
+    [[OverlandLocationEngine shared] stopLiveUpdates];
+    [self performSelector:@selector(runEngineStandardUpdates) withObject:nil afterDelay:1.0];
+}
+
+// The engine's liveUpdates loop is the standard-update source; the CLLocationManager
+// delegate stays for significant-change, heading, region and visit events.
+- (void)runEngineStandardUpdates {
+    CLActivityType activity = self.tripInProgress ? self.activityTypeDuringTrip : self.activityType;
+    CLLocationAccuracy accuracy = self.tripInProgress ? self.desiredAccuracyDuringTrip : self.desiredAccuracy;
+    [[OverlandLocationEngine shared] runLiveUpdatesWithActivityType:activity desiredAccuracy:accuracy];
+}
+
+- (void)processEngineLocation:(CLLocation *)location {
+    if(self.trackingEnabled) {
+        [self processLocations:@[location]];
+    }
 }
 
 - (void)sendQueueNow {
@@ -702,6 +717,7 @@ const double MPH_to_METERSPERSECOND = 0.447;
 
 - (void)enableTracking {
     self.trackingEnabled = YES;
+    [[OverlandLocationEngine shared] startBackgroundSession];
 
     if(self.tripInProgress) {
         self.locationManager.activityType = self.activityTypeDuringTrip;
@@ -717,32 +733,32 @@ const double MPH_to_METERSPERSECOND = 0.447;
 
     if(self.tripInProgress) {
         NSLog(@"Monitoring standard location changes during trip");
-        [self.locationManager startUpdatingLocation];
+        [self runEngineStandardUpdates];
         [self.locationManager startUpdatingHeading];
         [self.locationManager stopMonitoringSignificantLocationChanges];
     } else {
         switch(self.trackingMode) {
             case kGLTrackingModeOff:
                 NSLog(@"Not monitoring continuous location");
-                [self.locationManager stopUpdatingLocation];
+                [[OverlandLocationEngine shared] stopLiveUpdates];
                 [self.locationManager stopUpdatingHeading];
                 [self.locationManager stopMonitoringSignificantLocationChanges];
                 break;
             case kGLTrackingModeStandard:
                 NSLog(@"Monitoring standard location changes");
-                [self.locationManager startUpdatingLocation];
+                [self runEngineStandardUpdates];
                 [self.locationManager startUpdatingHeading];
                 [self.locationManager stopMonitoringSignificantLocationChanges];
                 break;
             case kGLTrackingModeSignificant:
                 NSLog(@"Monitoring significant location changes");
                 [self.locationManager startMonitoringSignificantLocationChanges];
-                [self.locationManager stopUpdatingLocation];
+                [[OverlandLocationEngine shared] stopLiveUpdates];
                 [self.locationManager stopUpdatingHeading];
                 break;
             case kGLTrackingModeStandardAndSignificant:
                 NSLog(@"Monitoring both standard and significant location changes");
-                [self.locationManager startUpdatingLocation];
+                [self runEngineStandardUpdates];
                 [self.locationManager startUpdatingHeading];
                 [self.locationManager startMonitoringSignificantLocationChanges];
                 break;
@@ -779,9 +795,10 @@ const double MPH_to_METERSPERSECOND = 0.447;
 - (void)disableTracking {
     self.trackingEnabled = NO;
     [UIDevice currentDevice].batteryMonitoringEnabled = NO;
+    [[OverlandLocationEngine shared] stopLiveUpdates];
+    [[OverlandLocationEngine shared] endBackgroundSession];
     [self.locationManager stopMonitoringVisits];
     [self.locationManager stopUpdatingHeading];
-    [self.locationManager stopUpdatingLocation];
     [self.locationManager stopMonitoringSignificantLocationChanges];
     if(CMMotionActivityManager.isActivityAvailable) {
         [self.motionActivityManager stopActivityUpdates];
@@ -1684,15 +1701,19 @@ const double MPH_to_METERSPERSECOND = 0.447;
 }
 
 - (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations {
-    
+    [self processLocations:locations];
+}
+
+- (void)processLocations:(NSArray *)locations {
+
     if(self.trackingMode == kGLTrackingModeOff) {
         // This probably shouldn't happen, but just in case, don't log anything if they have tracking mode set to off
         return;
     }
-    
+
     // Just incase these wont be restarted after stopped and user moved significantly, make sure updates start again.
     if (self.trackingMode == kGLTrackingModeStandardAndSignificant) {
-        [self.locationManager startUpdatingLocation];
+        [self runEngineStandardUpdates];
         [self.locationManager startUpdatingHeading];
         [self.locationManager startMonitoringSignificantLocationChanges];
     }
@@ -1833,7 +1854,7 @@ const double MPH_to_METERSPERSECOND = 0.447;
         && self.lastTimeMovedBeyondStopThreshold \
         && [self.lastTimeMovedBeyondStopThreshold timeIntervalSinceNow] < -self.stopsAutomaticallyAfterSeconds) {
         
-        [self.locationManager stopUpdatingLocation];
+        [[OverlandLocationEngine shared] stopLiveUpdates];
         [self.locationManager stopUpdatingHeading];
         [self.locationManager startMonitoringSignificantLocationChanges];
         

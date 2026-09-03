@@ -195,6 +195,7 @@ typedef void (^CaseBlock)(void);
 - (void)addWifiZoneWithName:(NSString *)name latitude:(NSString *)latitude longitude:(NSString *)longitude bssid:(NSString * _Nullable)bssid;
 - (void)removeWifiZoneAtIndex:(NSInteger)index;
 - (CLLocation *)currentLocationFromWifiName:(NSString *)wifi bssid:(NSString *)bssid;
+- (void)processEngineLocation:(CLLocation *)location;
 
 #pragma mark - Trips
 
