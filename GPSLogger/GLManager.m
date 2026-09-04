@@ -12,6 +12,7 @@
 #import "LOLDatabase.h"
 #import "FMDatabase.h"
 #import "SystemConfiguration/CaptiveNetwork.h"
+#import <Security/Security.h>
 #import "Overland-Swift.h"
 @import UserNotifications;
 
@@ -127,6 +128,9 @@ const double MPH_to_METERSPERSECOND = 0.447;
 
 - (void)refreshLocation {
     NSLog(@"Trying to update location now");
+    if(!self.trackingEnabled) {
+        return;
+    }
     [[OverlandLocationEngine shared] stopLiveUpdates];
     [self performSelector:@selector(runEngineStandardUpdates) withObject:nil afterDelay:1.0];
 }
@@ -316,10 +320,53 @@ const double MPH_to_METERSPERSECOND = 0.447;
         }
     } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
         self.batchInProgress = NO;
-        [self notify:error.localizedDescription withTitle:@"HTTP Error"];
+        NSLog(@"Send failed: %@", error);
+        if(error.code == NSURLErrorServerCertificateUntrusted
+           || error.code == NSURLErrorServerCertificateHasUnknownRoot
+           || error.code == NSURLErrorServerCertificateHasBadDate
+           || error.code == NSURLErrorClientCertificateRejected) {
+            NSString *certMessage = [GLManager certificateFailureExplanation:error];
+            NSLog(@"%@", certMessage);
+            [self notify:certMessage withTitle:@"Certificate Error"];
+        } else {
+            [self notify:error.localizedDescription withTitle:@"HTTP Error"];
+        }
         [self sendingFinished];
     }];
-    
+
+}
+
+// iOS rejects a server certificate that a browser might accept: NSURLSession
+// does not fetch missing intermediates (no AIA fetching), so a domain served
+// through a CDN with the full chain can work while the same domain direct
+// from the origin fails. Surface the concrete trust errors so the server
+// side can be fixed.
++ (NSString *)certificateFailureExplanation:(NSError *)error {
+    NSMutableString *message = [NSMutableString stringWithString:@"The server's certificate could not be verified."];
+
+    SecTrustRef trust = (__bridge SecTrustRef)error.userInfo[NSURLErrorFailingURLPeerTrustErrorKey];
+    if(trust) {
+        CFErrorRef evaluateError = NULL;
+        if(!SecTrustEvaluateWithError(trust, &evaluateError) && evaluateError) {
+            // walk the underlying error chain for each certificate problem
+            NSError *current = (__bridge NSError *)evaluateError;
+            int depth = 0;
+            while(current && depth < 5) {
+                NSString *reason = current.localizedDescription;
+                if(reason.length > 0 && ![message containsString:reason]) {
+                    [message appendFormat:@" %@", reason];
+                }
+                current = current.userInfo[NSUnderlyingErrorKey];
+                depth++;
+            }
+            CFRelease(evaluateError);
+        }
+    } else {
+        [message appendFormat:@" %@", error.localizedDescription];
+    }
+
+    [message appendString:@" iOS does not download missing intermediate certificates, so the server must present the complete chain with a certificate that matches the domain and is not expired."];
+    return message;
 }
 
 - (void)updateSettingsFromResponse:(id _Nullable)responseObject {
@@ -677,11 +724,18 @@ const double MPH_to_METERSPERSECOND = 0.447;
 
 - (void)setupHTTPClient {
     NSURL *endpoint = [NSURL URLWithString:[[NSUserDefaults standardUserDefaults] stringForKey:GLAPIEndpointDefaultsName]];
-    
+
+    [_httpClient invalidateSessionCancelingTasks:YES resetSession:NO];
+
     if(endpoint) {
         _httpClient = [[AFHTTPSessionManager manager] initWithBaseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@://%@", endpoint.scheme, endpoint.host]]];
         _httpClient.requestSerializer = [AFJSONRequestSerializer serializer];
         _httpClient.responseSerializer = [AFJSONResponseSerializer serializer];
+        // Some servers send valid JSON with a text/plain content type, which
+        // AFNetworking would otherwise reject before parsing
+        NSMutableSet *contentTypes = [NSMutableSet setWithSet:_httpClient.responseSerializer.acceptableContentTypes];
+        [contentTypes addObject:@"text/plain"];
+        _httpClient.responseSerializer.acceptableContentTypes = contentTypes;
         if(self.apiAccessToken != nil && ![@"" isEqualToString:self.apiAccessToken]) {
             if(self.loggingModeCurrentValue == kGLLoggingModeOwntracks) {
                 [_httpClient.requestSerializer setValue:[NSString stringWithFormat:@"Basic %@:", self.apiAccessToken]

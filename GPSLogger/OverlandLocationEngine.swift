@@ -8,6 +8,7 @@ import CoreLocation
 
     private var backgroundSession: CLBackgroundActivitySession?
     private var liveTask: Task<Void, Never>?
+    private var runningConfigKey: String?
 
     @objc func startBackgroundSession() {
         if backgroundSession == nil {
@@ -22,7 +23,14 @@ import CoreLocation
 
     @objc(runLiveUpdatesWithActivityType:desiredAccuracy:)
     func runLiveUpdates(activityType: UInt, desiredAccuracy: CLLocationAccuracy) {
+        // Skip if a loop is already running with the same configuration, e.g.
+        // the periodic restart nudges from the significant-change path
+        let key = "\(activityType)-\(desiredAccuracy)"
+        if key == runningConfigKey, let task = liveTask, !task.isCancelled {
+            return
+        }
         liveTask?.cancel()
+        runningConfigKey = key
         let config = liveConfiguration(activityType: activityType, desiredAccuracy: desiredAccuracy)
         liveTask = Task { [weak self] in
             do {
@@ -43,6 +51,7 @@ import CoreLocation
     @objc func stopLiveUpdates() {
         liveTask?.cancel()
         liveTask = nil
+        runningConfigKey = nil
     }
 
     private func liveConfiguration(activityType: UInt, desiredAccuracy: CLLocationAccuracy) -> CLLocationUpdate.LiveConfiguration {
