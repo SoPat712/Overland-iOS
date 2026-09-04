@@ -24,6 +24,30 @@ The app sends data to an HTTP endpoint. You can use an existing backend or build
 
 Looking for the Android version? → https://github.com/OpenHumans/overland_android
 
+## About this fork
+
+This is a modernized fork of Overland. Changes so far:
+
+* **SwiftUI + Liquid Glass UI** — all main screens rebuilt in SwiftUI with
+  Liquid Glass styling on iOS 26+ and clean fallbacks on iOS 17–25
+* **Modern CoreLocation engine** — standard location updates now use iOS 17's
+  `CLLocationUpdate.liveUpdates` with `CLBackgroundActivitySession` for
+  reliable background tracking; stationary detection throttles GNSS to save
+  battery (the delegate path still handles significant-change, heading,
+  region, and visit events)
+* **Multiple WiFi zones** — configure any number of networks with a fixed
+  location; SSID matching with optional BSSID tiebreaker (#151, #152)
+* **Merged PR #180** (yniverz): precision settings with sliders, max-accuracy
+  point filter, and stop-updates-when-stationary with automatic resume
+* **Bug fixes**: OwnTracks crash on empty queue (#188), `locations_in_payload`
+  always 1 (#197), OwnTracks `tst` epoch offset (#196)
+* **Better TLS diagnostics** — server certificate failures now show the
+  concrete trust errors (hostname mismatch, expired, untrusted root, missing
+  intermediates) instead of a generic message
+
+Minimum deployment target is iOS 17. See `AGENTS.md` for build and test
+commands.
+
 ## Documentation
 
 ### Tracker Screen
