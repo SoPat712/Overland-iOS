@@ -64,10 +64,18 @@
         NSString *token    = [self queryValueForKey:@"token" fromQueryItems:queryItems];
         NSString *deviceId = [self queryValueForKey:@"device_id" fromQueryItems:queryItems];
         NSString *uniqueId = [self queryValueForKey:@"unique_id" fromQueryItems:queryItems];
-        NSLog(@"Saving new config endpoint=%@ token=%@ device_id=%@ unique_id=%@", endpoint, token, deviceId, uniqueId);
+        if(![GLManager isValidEndpoint:endpoint]) return;
+        NSLog(@"Applying server configuration");
         [[GLManager sharedManager] saveNewDeviceId:deviceId];
         [[GLManager sharedManager] saveNewAPIEndpoint:endpoint andAccessToken:token];
         [[NSUserDefaults standardUserDefaults] setBool:[uniqueId isEqualToString:@"yes"] forKey:GLIncludeUniqueIdDefaultsName];
+        NSMutableDictionary *headers = [NSMutableDictionary dictionary];
+        for(NSURLQueryItem *item in queryItems) {
+            if([item.name hasPrefix:@"header_"] && item.name.length > 7 && item.value) {
+                headers[[item.name substringFromIndex:7]] = item.value;
+            }
+        }
+        if(headers.count > 0) [GLManager sharedManager].customHTTPHeaders = headers;
     }
 }
 
@@ -122,6 +130,9 @@
     self.window.rootViewController = [OverlandRootHosting makeRoot];
     [self.window makeKeyAndVisible];
 
+    if(connectionOptions.URLContexts.count > 0) {
+        [self scene:scene openURLContexts:connectionOptions.URLContexts];
+    }
     if(connectionOptions.shortcutItem != nil) {
         NSLog(@"App launched. connectionOptions = %@", connectionOptions);
         [self handleLaunchFromShortcutItem:connectionOptions.shortcutItem];
@@ -134,12 +145,13 @@
     NSLog(@"shortcutItem = %@", shortcutItem);
     
     [self handleLaunchFromShortcutItem:shortcutItem];
+    completionHandler(YES);
 }
 
 - (void)handleLaunchFromShortcutItem:(UIApplicationShortcutItem *)shortcutItem {
     if([shortcutItem.type isEqualToString:@"stop"]) {
         [[GLManager sharedManager] endTrip];
-    } else {
+    } else if([[GLManager GLTripModes] containsObject:shortcutItem.type]) {
         [GLManager sharedManager].currentTripMode = shortcutItem.type;
         [[GLManager sharedManager] startTrip];
     }

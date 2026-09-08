@@ -15,20 +15,25 @@ struct WifiZoneListView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(zones[i]["name"] ?? "")
                         .font(.headline)
+                    if let bssid = zones[i]["bssid"] { Text(bssid).font(.caption).foregroundStyle(.secondary) }
                     Text("\(zones[i]["latitude"] ?? "0"), \(zones[i]["longitude"] ?? "0")")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
             .onDelete { offsets in
-                for i in offsets {
+                for i in offsets.sorted(by: >) {
                     GLManager.shared().removeWifiZone(at: i)
                 }
                 reload()
             }
         }
+        .tabBarClearance()
         .navigationTitle("WiFi Zones")
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                SettingsHelpButton(topic: .automation)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showingAddZone = true
@@ -61,6 +66,11 @@ struct AddWifiZoneView: View {
             Form {
                 Section("Network") {
                     TextField("WiFi network name", text: $name)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    TextField("BSSID (optional)", text: $bssid)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                     if let ssid = currentSSID {
                         Button("Use current network (\(ssid))") {
                             name = ssid
@@ -95,10 +105,16 @@ struct AddWifiZoneView: View {
                         onSave()
                         dismiss()
                     }
-                    .disabled(name.isEmpty)
+                    .disabled(!validZone)
                 }
             }
         }
+    }
+
+    private var validZone: Bool {
+        guard !name.isEmpty, let lat = Double(latitude), let lon = Double(longitude),
+              lat.isFinite, lon.isFinite, (-90...90).contains(lat), (-180...180).contains(lon) else { return false }
+        return bssid.isEmpty || bssid.range(of: "^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$", options: .regularExpression) != nil
     }
 
     private var currentSSID: String? {

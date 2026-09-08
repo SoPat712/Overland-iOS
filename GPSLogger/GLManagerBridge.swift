@@ -1,6 +1,14 @@
 import SwiftUI
 import UIKit
 
+// One entry per HTTP send attempt, oldest first.
+struct SendStatusEntry: Identifiable, Equatable {
+    enum Kind: Int { case success = 0, server = 1, network = 2 }
+    let id: Int
+    let date: Date
+    let kind: Kind
+}
+
 // Thin observable wrapper over GLManager. Views read live status here and
 // write settings through GLManager so its side effects (enableTracking etc.)
 // still run. ObjC can't be observed directly, so notifications bump a tick.
@@ -11,14 +19,16 @@ final class GLManagerBridge {
     private(set) var tick = 0
     private(set) var trackingEnabled = false
     private(set) var queueCount = 0
-    private(set) var lastLocationAge = "0:00"
-    private(set) var lastLocationText = "0.0000\n0.0000"
-    private(set) var lastAccuracyText = "+/-0m 0m"
+    private(set) var lastLocationAge = "–"
+    private(set) var lastLocationText = "–"
+    private(set) var lastAccuracyText = "No location yet"
     private(set) var speed = 0
     private(set) var tripInProgress = false
     private(set) var sending = false
     private(set) var endpointSet = false
     private(set) var speedUnit = "MPH"
+    private(set) var lastSentText = "–"
+    private(set) var sendHistory: [SendStatusEntry] = []
 
     private var timer: Timer?
 
@@ -43,24 +53,53 @@ final class GLManagerBridge {
         queueCount = Int(gl.currentPointsInQueue)
         tripInProgress = gl.tripInProgress()
         sending = gl.sendInProgress
-        endpointSet = gl.apiEndpointURL() != nil
-        speedUnit = Locale.current.usesMetricSystem ? "KM/H" : "MPH"
+        endpointSet = !(gl.apiEndpointURL() ?? "").isEmpty
+        speedUnit = (Locale.current.measurementSystem == .metric) ? "KM/H" : "MPH"
+
+        if let sent = gl.lastSentDate {
+            lastSentText = Self.timeFormatted(max(0, Int(-sent.timeIntervalSinceNow))) + " ago"
+        } else {
+            lastSentText = "–"
+        }
+
+        let results = (gl.recentSendResults() as? [[String: NSNumber]]) ?? []
+        sendHistory = results.enumerated().map { idx, entry in
+            SendStatusEntry(
+                id: idx,
+                date: Date(timeIntervalSince1970: entry["ts"]?.doubleValue ?? 0),
+                kind: SendStatusEntry.Kind(rawValue: entry["status"]?.intValue ?? SendStatusEntry.Kind.network.rawValue) ?? .network
+            )
+        }
 
         if let loc = gl.lastLocation {
             lastLocationText = String(format: "%.4f\n%.4f", loc.coordinate.latitude, loc.coordinate.longitude)
-            lastAccuracyText = String(format: "+/-%.0fm %.0fm", loc.horizontalAccuracy, loc.verticalAccuracy)
-            var age = Int(-loc.timestamp.timeIntervalSinceNow)
-            if age == 1 { age = 0 }
+            lastAccuracyText = String(format: "±%.0f m", loc.horizontalAccuracy)
+            let age = max(0, Int(-loc.timestamp.timeIntervalSinceNow))
             lastLocationAge = Self.timeFormatted(age)
-            let metric = Locale.current.usesMetricSystem
+            let metric = (Locale.current.measurementSystem == .metric)
             let raw = metric ? loc.speed * 3.6 : loc.speed * 2.23694
             speed = max(0, Int(raw.rounded()))
         } else {
-            lastLocationAge = "0:00"
-            lastLocationText = "0.0000\n0.0000"
-            lastAccuracyText = "+/-0m 0m"
+            lastLocationAge = "–"
+            lastLocationText = "–"
+            lastAccuracyText = "No location yet"
             speed = 0
         }
+    }
+
+    func saveServer(url: String, token: String, deviceId: String, uniqueId: Bool, acceptHTTP: Bool, headers: [String: String]) {
+        guard let gl = GLManager.shared() else { return }
+        gl.saveNewDeviceId(deviceId)
+        gl.customHTTPHeaders = headers
+        UserDefaults.standard.set(uniqueId, forKey: GLIncludeUniqueIdDefaultsName)
+        UserDefaults.standard.set(acceptHTTP, forKey: GLConsiderHTTP200SuccessDefaultsName)
+        gl.saveNewAPIEndpoint(url, andAccessToken: token)
+        refresh()
+    }
+
+    func clearServer() {
+        GLManager.shared().saveNewAPIEndpoint(nil, andAccessToken: nil)
+        refresh()
     }
 
     private static func timeFormatted(_ totalSeconds: Int) -> String {
@@ -76,8 +115,22 @@ final class GLManagerBridge {
     // Write-through bindings: settings changes go through GLManager so its
     // side effects (enableTracking, persistence) run, then views refresh.
 
+    var usageProfile: Int {
+        get {
+            _ = tick
+            return GLManager.shared().usageProfile()
+        }
+        set {
+            GLManager.shared().applyUsageProfile(newValue)
+            refresh()
+        }
+    }
+
     var trackingOn: Bool {
-        get { trackingEnabled }
+        get {
+            _ = tick
+            return trackingEnabled
+        }
         set {
             newValue ? GLManager.shared().startAllUpdates() : GLManager.shared().stopAllUpdates()
             refresh()
@@ -85,41 +138,62 @@ final class GLManagerBridge {
     }
 
     var trackingModeIndex: Int {
-        get { Int(GLManager.shared().trackingMode.rawValue) }
+        get {
+            _ = tick
+            return Int(GLManager.shared().trackingMode.rawValue)
+        }
         set {
-            GLManager.shared().trackingMode = GLTrackingMode(rawValue: UInt32(newValue)) ?? kGLTrackingModeOff
+            GLManager.shared().trackingMode = GLTrackingMode(rawValue: UInt32(newValue))
             refresh()
         }
     }
 
     var visitTracking: Bool {
-        get { GLManager.shared().visitTrackingEnabled }
+        get {
+            _ = tick
+            return GLManager.shared().visitTrackingEnabled
+        }
         set {
             GLManager.shared().visitTrackingEnabled = newValue
             refresh()
         }
     }
 
-    var accuracyIndex: Int {
+    // Accuracy: Custom (meters via slider), Best, or Navigation-grade.
+    var accuracyPreset: Int {
         get {
+            _ = tick
             switch GLManager.shared().desiredAccuracy {
-            case kCLLocationAccuracyBestForNavigation: return 0
+            case kCLLocationAccuracyBestForNavigation: return 2
             case kCLLocationAccuracyBest: return 1
-            case 10: return 2
-            case 100: return 3
-            case 1000: return 4
-            default: return 5
+            default: return 0
             }
         }
         set {
-            let values: [CLLocationAccuracy] = [kCLLocationAccuracyBestForNavigation, kCLLocationAccuracyBest, 10, 100, 1000, 3000]
-            GLManager.shared().desiredAccuracy = values[newValue]
+            switch newValue {
+            case 2: GLManager.shared().desiredAccuracy = kCLLocationAccuracyBestForNavigation
+            case 1: GLManager.shared().desiredAccuracy = kCLLocationAccuracyBest
+            default: GLManager.shared().desiredAccuracy = accuracyMeters
+            }
+            refresh()
+        }
+    }
+
+    var accuracyMeters: Double {
+        get {
+            _ = tick
+            let v = GLManager.shared().desiredAccuracy
+            return v > 0 ? v : 100
+        }
+        set {
+            GLManager.shared().desiredAccuracy = newValue.rounded()
             refresh()
         }
     }
 
     var activityIndex: Int {
         get {
+            _ = tick
             switch GLManager.shared().activityType {
             case .automotiveNavigation: return 1
             case .fitness: return 2
@@ -136,129 +210,297 @@ final class GLManagerBridge {
     }
 
     var backgroundIndicator: Bool {
-        get { GLManager.shared().showBackgroundLocationIndicator }
+        get {
+            _ = tick
+            return GLManager.shared().showBackgroundLocationIndicator
+        }
         set {
             GLManager.shared().showBackgroundLocationIndicator = newValue
             refresh()
         }
     }
 
+    var locationPermission: String {
+        _ = tick
+        return GLManager.shared().authorizationStatusAsString()
+    }
+
+    func requestLocationPermission() {
+        GLManager.shared().requestAuthorizationPermission()
+        refresh()
+    }
+
+    var resumeDistanceMeters: Double {
+        get {
+            _ = tick
+            return max(0, GLManager.shared().resumesAfterDistance)
+        }
+        set {
+            GLManager.shared().resumesAfterDistance = newValue < 1 ? -1 : newValue
+            refresh()
+        }
+    }
+
     var pausesAutomatically: Bool {
-        get { GLManager.shared().pausesAutomatically }
+        get {
+            _ = tick
+            return GLManager.shared().pausesAutomatically
+        }
         set {
             GLManager.shared().pausesAutomatically = newValue
+            if !newValue {
+                GLManager.shared().resumesAfterDistance = -1
+            }
             refresh()
         }
     }
 
     var loggingModeIndex: Int {
-        get { Int(GLManager.shared().loggingMode.rawValue) }
-        set {
-            GLManager.shared().loggingMode = GLLoggingMode(rawValue: UInt32(newValue)) ?? kGLLoggingModeAllData
-            refresh()
-        }
-    }
-
-    var batchIndex: Int {
         get {
-            switch GLManager.shared().pointsPerBatch {
-            case 50: return 0
-            case 100: return 1
-            case 500: return 3
-            case 1000: return 4
-            default: return 2
-            }
+            _ = tick
+            return Int(GLManager.shared().loggingMode.rawValue)
         }
         set {
-            GLManager.shared().pointsPerBatch = [50, 100, 200, 500, 1000][newValue]
+            GLManager.shared().loggingMode = GLLoggingMode(rawValue: UInt32(newValue))
             refresh()
         }
     }
 
-    var discardDistanceIndex: Int {
-        get { distanceIndex(GLManager.shared().discardPointsWithinDistance) }
-        set {
-            GLManager.shared().discardPointsWithinDistance = [-1, 1, 10, 50, 100, 500][newValue]
-            refresh()
-        }
-    }
-
-    private func distanceIndex(_ v: CLLocationDistance) -> Int {
-        if v == -1 { return 0 }
-        if v < 10 { return 1 }
-        if v < 50 { return 2 }
-        if v < 100 { return 3 }
-        if v < 500 { return 4 }
-        return 5
-    }
-
-    var discardSecondsIndex: Int {
+    var batchValue: Double {
         get {
-            let s = GLManager.shared().discardPointsWithinSeconds
-            if s < 5 { return 0 }
-            if s < 10 { return 1 }
-            if s < 30 { return 2 }
-            if s < 60 { return 3 }
-            if s < 120 { return 4 }
-            return 5
+            _ = tick
+            return Double(GLManager.shared().pointsPerBatch)
         }
         set {
-            GLManager.shared().discardPointsWithinSeconds = [1, 5, 10, 30, 60, 120][newValue]
+            GLManager.shared().pointsPerBatch = Int32(newValue.rounded())
             refresh()
         }
     }
 
-    var discardAccuracyIndex: Int {
+    // Discard filters. Values <= 0 are stored as -1 ("Off").
+    var discardDistanceMeters: Double {
         get {
+            _ = tick
+            let v = GLManager.shared().discardPointsWithinDistance
+            return v > 0 ? v : 0
+        }
+        set {
+            GLManager.shared().discardPointsWithinDistance = newValue < 1 ? -1 : newValue.rounded()
+            refresh()
+        }
+    }
+
+    var discardSecondsValue: Double {
+        get {
+            _ = tick
+            return Double(max(GLManager.shared().discardPointsWithinSeconds, 0))
+        }
+        set {
+            GLManager.shared().discardPointsWithinSeconds = Int32(newValue.rounded())
+            refresh()
+        }
+    }
+
+    var discardAccuracyMeters: Double {
+        get {
+            _ = tick
             let v = GLManager.shared().discardPointsOutsideAccuracy
-            if v == -1 { return 0 }
-            if v < 50 { return 1 }
-            if v < 100 { return 2 }
-            if v < 500 { return 3 }
-            if v < 1000 { return 4 }
-            return 5
+            return v > 0 ? v : 0
         }
         set {
-            GLManager.shared().discardPointsOutsideAccuracy = [-1, 10, 50, 100, 500, 1000][newValue]
+            GLManager.shared().discardPointsOutsideAccuracy = newValue < 1 ? -1 : newValue.rounded()
             refresh()
         }
     }
 
-    var stopRadiusIndex: Int {
+    var stopRadiusMeters: Double {
         get {
+            _ = tick
             let v = GLManager.shared().stopsAutomaticallyRadius
-            if v == -1 { return 0 }
-            if v < 20 { return 1 }
-            if v < 50 { return 2 }
-            if v < 100 { return 3 }
-            if v < 200 { return 4 }
-            return 5
+            return v > 0 ? v : 0
         }
         set {
-            GLManager.shared().stopsAutomaticallyRadius = [-1, 10, 20, 50, 100, 200][newValue]
+            GLManager.shared().stopsAutomaticallyRadius = newValue < 1 ? -1 : newValue.rounded()
             refresh()
         }
     }
 
-    var stopAfterIndex: Int {
+    var stopAfterValue: Double {
         get {
-            let m = GLManager.shared().stopsAutomaticallyAfterSeconds
-            if m < 120 { return 0 }
-            if m < 300 { return 1 }
-            if m < 600 { return 2 }
-            if m < 1200 { return 3 }
-            return 4
+            _ = tick
+            return Double(GLManager.shared().stopsAutomaticallyAfterSeconds)
         }
         set {
-            GLManager.shared().stopsAutomaticallyAfterSeconds = [60, 120, 300, 600, 1200][newValue]
+            GLManager.shared().stopsAutomaticallyAfterSeconds = Int32(newValue.rounded())
+            refresh()
+        }
+    }
+
+    var sendIntervalValue: Double {
+        get {
+            _ = tick
+            return max(0, GLManager.shared().sendingInterval.doubleValue)
+        }
+        set {
+            GLManager.shared().sendingInterval = NSNumber(value: newValue < 1 ? -1 : Int(newValue.rounded()))
             refresh()
         }
     }
 
     var notifications: Bool {
-        get { GLManager.shared().notificationsEnabled }
+        get {
+            _ = tick
+            return GLManager.shared().notificationsEnabled
+        }
         set {
             GLManager.shared().notificationsEnabled = newValue
+            refresh()
+        }
+    }
+
+    // MARK: Trip Settings (applied only while a trip is in progress)
+
+    var tripAccuracyPreset: Int {
+        get {
+            _ = tick
+            switch GLManager.shared().desiredAccuracyDuringTrip {
+            case kCLLocationAccuracyBestForNavigation: return 2
+            case kCLLocationAccuracyBest: return 1
+            default: return 0
+            }
+        }
+        set {
+            switch newValue {
+            case 2: GLManager.shared().desiredAccuracyDuringTrip = kCLLocationAccuracyBestForNavigation
+            case 1: GLManager.shared().desiredAccuracyDuringTrip = kCLLocationAccuracyBest
+            default: GLManager.shared().desiredAccuracyDuringTrip = tripAccuracyMeters
+            }
+            refresh()
+        }
+    }
+
+    var tripAccuracyMeters: Double {
+        get {
+            _ = tick
+            let v = GLManager.shared().desiredAccuracyDuringTrip
+            return v > 0 ? v : 100
+        }
+        set {
+            GLManager.shared().desiredAccuracyDuringTrip = newValue.rounded()
+            refresh()
+        }
+    }
+
+    var tripMode: String {
+        get {
+            _ = tick
+            return GLManager.shared().currentTripMode ?? "walk"
+        }
+        set {
+            GLManager.shared().currentTripMode = newValue
+            refresh()
+        }
+    }
+
+    var tripDistance: Double {
+        _ = tick
+        return max(0, GLManager.shared().currentTripDistance())
+    }
+
+    var tripDuration: Double {
+        _ = tick
+        return max(0, GLManager.shared().currentTripDuration())
+    }
+
+    var tripBatchValue: Double {
+        get {
+            _ = tick
+            return Double(GLManager.shared().pointsPerBatchDuringTrip)
+        }
+        set {
+            GLManager.shared().pointsPerBatchDuringTrip = Int32(newValue.rounded())
+            refresh()
+        }
+    }
+
+    var tripDiscardDistanceMeters: Double {
+        get {
+            _ = tick
+            let v = GLManager.shared().discardPointsWithinDistanceDuringTrip
+            return v > 0 ? v : 0
+        }
+        set {
+            GLManager.shared().discardPointsWithinDistanceDuringTrip = newValue < 1 ? -1 : newValue.rounded()
+            refresh()
+        }
+    }
+
+    var tripDiscardSecondsValue: Double {
+        get {
+            _ = tick
+            return Double(max(GLManager.shared().discardPointsWithinSecondsDuringTrip, 0))
+        }
+        set {
+            GLManager.shared().discardPointsWithinSecondsDuringTrip = Int32(newValue.rounded())
+            refresh()
+        }
+    }
+
+    var tripActivityIndex: Int {
+        get {
+            _ = tick
+            return Int(GLManager.shared().activityTypeDuringTrip.rawValue) - 1
+        }
+        set {
+            GLManager.shared().activityTypeDuringTrip = CLActivityType(rawValue: newValue + 1) ?? .other
+            refresh()
+        }
+    }
+
+    var tripLoggingModeIndex: Int {
+        get {
+            _ = tick
+            return Int(GLManager.shared().loggingModeDuringTrip.rawValue)
+        }
+        set {
+            GLManager.shared().loggingModeDuringTrip = GLLoggingMode(rawValue: UInt32(newValue))
+            refresh()
+        }
+    }
+
+    var tripBackgroundIndicator: Bool {
+        get {
+            _ = tick
+            return GLManager.shared().showBackgroundLocationIndicatorDuringTrip
+        }
+        set {
+            GLManager.shared().showBackgroundLocationIndicatorDuringTrip = newValue
+            refresh()
+        }
+    }
+
+    var tripPausesAutomatically: Bool {
+        get {
+            _ = tick
+            return GLManager.shared().pausesAutomaticallyDuringTrip
+        }
+        set {
+            GLManager.shared().pausesAutomaticallyDuringTrip = newValue
+            if !newValue {
+                GLManager.shared().resumesAfterDistance = -1
+            }
+            refresh()
+        }
+    }
+
+    var screenLock: Bool {
+        get {
+            _ = tick
+            return UserDefaults.standard.bool(forKey: GLScreenLockEnabledDefaultsName)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: GLScreenLockEnabledDefaultsName)
+            UIApplication.shared.isIdleTimerDisabled = newValue && tripInProgress
             refresh()
         }
     }
@@ -275,7 +517,11 @@ extension View {
                 self.buttonStyle(.glass).tint(tint)
             }
         } else {
-            self.buttonStyle(.borderedProminent).tint(tint)
+            if prominent {
+                self.buttonStyle(.borderedProminent).tint(tint)
+            } else {
+                self.buttonStyle(.bordered).tint(tint)
+            }
         }
     }
 
@@ -286,6 +532,28 @@ extension View {
             self.glassEffect(.regular.interactive())
         } else {
             self.background(.ultraThinMaterial)
+        }
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func glassPanel(cornerRadius: CGFloat) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        } else {
+            self.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        }
+    }
+}
+
+extension View {
+    func confirmStopTracking(_ presented: Binding<Bool>, action: @escaping () -> Void) -> some View {
+        alert("Stop location tracking?", isPresented: presented) {
+            Button("Stop Tracking", role: .destructive, action: action)
+            Button("Keep Tracking", role: .cancel) { }
+        } message: {
+            Text("New locations will stop recording. Queued locations stay saved for sending later.")
         }
     }
 }

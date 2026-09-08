@@ -169,6 +169,8 @@ typedef void (^CaseBlock)(void);
 
 - (NSString *)authorizationStatusAsString;
 - (void)requestAuthorizationPermission;
+- (NSInteger)usageProfile;
+- (void)applyUsageProfile:(NSInteger)profile;
 
 - (void)saveNewAPIEndpoint:(NSString *)endpoint andAccessToken:(NSString *)accessToken;
 - (NSString *)apiEndpointURL;
@@ -180,6 +182,15 @@ typedef void (^CaseBlock)(void);
 - (void)sendQueueNow;
 - (void)notify:(NSString *)message withTitle:(NSString *)title;
 - (void)askToEndTrip;
+
+typedef NS_ENUM(NSInteger, GLSendStatus) {
+    GLSendStatusSuccess = 0,
+    GLSendStatusServerError = 1,
+    GLSendStatusNetworkError = 2,
+};
+
+- (void)recordSendResult:(GLSendStatus)status;
+- (NSArray *)recentSendResults;
 
 - (void)numberOfLocationsInQueue:(void(^)(long num))callback;
 - (void)numberOfObjectsInQueue:(void(^)(long locations, long trips, long stats))callback;
@@ -197,6 +208,9 @@ typedef void (^CaseBlock)(void);
 - (void)removeWifiZoneAtIndex:(NSInteger)index;
 - (CLLocation *)currentLocationFromWifiName:(NSString *)wifi bssid:(NSString *)bssid;
 - (void)processEngineLocation:(CLLocation *)location;
+- (void)processEngineStationary:(BOOL)stationary;
++ (BOOL)isValidEndpoint:(NSString *)endpoint;
+@property (nonatomic, copy) NSDictionary<NSString *, NSString *> *customHTTPHeaders;
 
 #pragma mark - Trips
 
@@ -204,6 +218,7 @@ typedef void (^CaseBlock)(void);
 - (BOOL)tripInProgress;
 @property (nonatomic) NSString *currentTripMode;
 - (NSDate *)currentTripStart;
+- (NSArray *)currentTripPoints;
 - (CLLocationDistance)currentTripDistance;
 - (NSTimeInterval)currentTripDuration;
 - (void)startTrip;

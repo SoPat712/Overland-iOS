@@ -5,8 +5,22 @@
 	};
 	objectVersion = 54;
 	objects = {
+        A01100000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Tests/OverlandTests.m; sourceTree = SOURCE_ROOT; };
+        A01100000000000000000002 = {isa = PBXBuildFile; fileRef = A01100000000000000000001; };
+        A01100000000000000000003 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = OverlandTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+        A01100000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A01100000000000000000002,); runOnlyForDeploymentPostprocessing = 0; };
+        A01100000000000000000005 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A01100000000000000000006 = {isa = PBXNativeTarget; buildConfigurationList = A01100000000000000000007; buildPhases = (A01100000000000000000004,A01100000000000000000005,); buildRules = (); dependencies = (A0110000000000000000000B,); name = OverlandTests; productName = OverlandTests; productReference = A01100000000000000000003; productType = "com.apple.product-type.bundle.unit-test"; };
+        A01100000000000000000007 = {isa = XCConfigurationList; buildConfigurations = (A01100000000000000000008,A01100000000000000000009,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+        A01100000000000000000008 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; HEADER_SEARCH_PATHS = ("$(SRCROOT)/GPSLogger","$(SRCROOT)/Pods/FMDB/src/fmdb",); FRAMEWORK_SEARCH_PATHS = ("$(inherited)","$(PLATFORM_DIR)/Developer/Library/Frameworks",); OTHER_LDFLAGS = ("-framework",XCTest,); IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.aaronpk.overland.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Overland.app/Overland"; }; name = Debug; };
+        A01100000000000000000009 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; HEADER_SEARCH_PATHS = ("$(SRCROOT)/GPSLogger","$(SRCROOT)/Pods/FMDB/src/fmdb",); FRAMEWORK_SEARCH_PATHS = ("$(inherited)","$(PLATFORM_DIR)/Developer/Library/Frameworks",); OTHER_LDFLAGS = ("-framework",XCTest,); IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.aaronpk.overland.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Overland.app/Overland"; }; name = Release; };
+        A0110000000000000000000A = {isa = PBXContainerItemProxy; containerPortal = 0FFD314A1BAB7A34009B3A03; proxyType = 1; remoteGlobalIDString = 0FFD31511BAB7A34009B3A03; remoteInfo = Overland; };
+        A0110000000000000000000B = {isa = PBXTargetDependency; target = 0FFD31511BAB7A34009B3A03; targetProxy = A0110000000000000000000A; };
+
 
 /* Begin PBXBuildFile section */
+        A03300000000000000000002 = {isa = PBXBuildFile; fileRef = A03300000000000000000001; };
+        A02200000000000000000002 = {isa = PBXBuildFile; fileRef = A02200000000000000000001; };
 		0F3E5210201E543200DCFAA4 /* OpenSansCondensed-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0F3E520E201E543200DCFAA4 /* OpenSansCondensed-Bold.ttf */; };
 		0F3E5211201E543200DCFAA4 /* OpenSansCondensed-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0F3E520F201E543200DCFAA4 /* OpenSansCondensed-Light.ttf */; };
 		0F3E5213201E551000DCFAA4 /* OpenSans-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0F3E5212201E54FB00DCFAA4 /* OpenSans-Light.ttf */; };
@@ -23,6 +37,8 @@
 		0FCAFE00F00D0000000000F4 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000E4 /* SettingsView.swift */; };
 		0FCAFE00F00D0000000000F5 /* EndpointView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000E5 /* EndpointView.swift */; };
 		0FCAFE00F00D0000000000F6 /* TripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000E6 /* TripView.swift */; };
+		0FCAFE00F00D0000000000F8 /* SteppedSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000E8 /* SteppedSlider.swift */; };
+		0FCAFE00F00D0000000000F7 /* TripSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FCAFE00F00D0000000000E7 /* TripSettingsView.swift */; };
 		0FAC1FEE2B25FBB50007F3B1 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0FAC1FED2B25FBB50007F3B1 /* SceneDelegate.m */; };
 		0FB85AC01BE0151800F25126 /* ExternalAccessory.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FB85ABF1BE0151800F25126 /* ExternalAccessory.framework */; };
 		0FCF53251F81AB0800577A0F /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FCF53241F81AB0800577A0F /* UserNotifications.framework */; };
@@ -47,6 +63,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+        A03300000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentLocationMarker.swift; sourceTree = "<group>"; };
+        A02200000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsHelpView.swift; sourceTree = "<group>"; };
 		0F3E520E201E543200DCFAA4 /* OpenSansCondensed-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "OpenSansCondensed-Bold.ttf"; path = "Fonts/OpenSansCondensed-Bold.ttf"; sourceTree = SOURCE_ROOT; };
 		0F3E520F201E543200DCFAA4 /* OpenSansCondensed-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "OpenSansCondensed-Light.ttf"; path = "Fonts/OpenSansCondensed-Light.ttf"; sourceTree = SOURCE_ROOT; };
 		0F3E5212201E54FB00DCFAA4 /* OpenSans-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "OpenSans-Light.ttf"; path = "Fonts/OpenSans-Light.ttf"; sourceTree = SOURCE_ROOT; };
@@ -67,6 +85,8 @@
 		0FCAFE00F00D0000000000E4 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		0FCAFE00F00D0000000000E5 /* EndpointView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndpointView.swift; sourceTree = "<group>"; };
 		0FCAFE00F00D0000000000E6 /* TripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripView.swift; sourceTree = "<group>"; };
+		0FCAFE00F00D0000000000E8 /* SteppedSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SteppedSlider.swift; sourceTree = "<group>"; };
+		0FCAFE00F00D0000000000E7 /* TripSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripSettingsView.swift; sourceTree = "<group>"; };
 		0FAC1FEC2B255D460007F3B1 /* NSArray+map.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSArray+map.h"; sourceTree = "<group>"; };
 		0FAC1FED2B25FBB50007F3B1 /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
 		0FAC1FEF2B25FBC10007F3B1 /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
@@ -162,6 +182,7 @@
 		0FFD31491BAB7A34009B3A03 = {
 			isa = PBXGroup;
 			children = (
+                A01100000000000000000001,
 				6DEC9B3621F3F88500D9E8C4 /* Overland.entitlements */,
 				0FFD31541BAB7A34009B3A03 /* GPSLogger */,
 				0F3E520D201E515800DCFAA4 /* Fonts */,
@@ -209,8 +230,12 @@
 				0FCAFE00F00D0000000000E2 /* OverlandRootView.swift */,
 				0FCAFE00F00D0000000000E3 /* TrackerView.swift */,
 				0FCAFE00F00D0000000000E4 /* SettingsView.swift */,
+                A02200000000000000000001,
+                A03300000000000000000001,
 				0FCAFE00F00D0000000000E5 /* EndpointView.swift */,
 				0FCAFE00F00D0000000000E6 /* TripView.swift */,
+				0FCAFE00F00D0000000000E8 /* SteppedSlider.swift */,
+				0FCAFE00F00D0000000000E7 /* TripSettingsView.swift */,
 				0FAC1FEC2B255D460007F3B1 /* NSArray+map.h */,
 				0FAC1FEA2B255CA60007F3B1 /* NSArray+map.m */,
 				0FFD31611BAB7A34009B3A03 /* Main.storyboard */,
@@ -316,6 +341,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+                A01100000000000000000006,
 				0FFD31511BAB7A34009B3A03 /* Overland */,
 			);
 		};
@@ -376,8 +402,12 @@
 				0FCAFE00F00D0000000000F2 /* OverlandRootView.swift in Sources */,
 				0FCAFE00F00D0000000000F3 /* TrackerView.swift in Sources */,
 				0FCAFE00F00D0000000000F4 /* SettingsView.swift in Sources */,
+                A02200000000000000000002,
+                A03300000000000000000002,
 				0FCAFE00F00D0000000000F5 /* EndpointView.swift in Sources */,
 				0FCAFE00F00D0000000000F6 /* TripView.swift in Sources */,
+				0FCAFE00F00D0000000000F8 /* SteppedSlider.swift in Sources */,
+				0FCAFE00F00D0000000000F7 /* TripSettingsView.swift in Sources */,
 				0FCF532E1F83FDBC00577A0F /* EndpointViewController.m in Sources */,
 				0F444F0C1BD04A7E00106C2E /* TripModeViewController.m in Sources */,
 				0FAC1FEE2B25FBB50007F3B1 /* SceneDelegate.m in Sources */,

@@ -1,38 +1,30 @@
 #!/bin/bash
-# Build, install, launch and smoke-test Overland on the booted simulator.
-# Usage: ./ci_scripts/smoke_test.sh [app-bundle-path]
+# Build, install and launch on one explicitly selected simulator.
 set -euo pipefail
 
 APP_PATH="${1:-}"
-SCHEME="Overland"
-SIM="iPhone 17 Pro"
-BUNDLE_ID="com.aaronpk.overland"
+SIM="${SIM:-iPhone 17 Pro}"
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
-SHOTS="$DIR/screenshots"
+SHOTS="$DIR/Screenshots"
+DERIVED_DATA="${DERIVED_DATA:-/tmp/overland-smoke-build}"
 mkdir -p "$SHOTS"
 
+UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; name=sys.argv[1]; print(next(d["udid"] for devices in json.load(sys.stdin)["devices"].values() for d in devices if d["name"] == name))' "$SIM")
+STATE=$(xcrun simctl list devices -j | python3 -c 'import json,sys; udid=sys.argv[1]; print(next(d["state"] for devices in json.load(sys.stdin)["devices"].values() for d in devices if d["udid"] == udid))' "$UDID")
+if [ "$STATE" != "Booted" ]; then
+    xcrun simctl boot "$UDID"
+fi
+xcrun simctl bootstatus "$UDID" -b
+
 if [ -z "$APP_PATH" ]; then
-	echo "Building..."
-	xcodebuild -workspace "$DIR/Overland.xcworkspace" -scheme "$SCHEME" \
-		-destination "platform=iOS Simulator,name=$SIM" build | tail -1
-	APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData/Overland-*/Build/Products/Debug-iphonesimulator -name "Overland.app" -maxdepth 1 | head -1)
+    xcodebuild -workspace "$DIR/Overland.xcworkspace" -scheme Overland \
+        -destination "platform=iOS Simulator,id=$UDID" -derivedDataPath "$DERIVED_DATA" build
+    APP_PATH="$DERIVED_DATA/Build/Products/Debug-iphonesimulator/Overland.app"
 fi
 
-UDID=$(xcrun simctl list devices booted | grep "$SIM (" | grep -oE "[A-F0-9-]{36}" | head -1)
-if [ -z "$UDID" ]; then
-	xcrun simctl boot "$SIM"
-	xcrun simctl bootstatus "$SIM" -b
-	UDID=$(xcrun simctl list devices booted | grep "$SIM (" | grep -oE "[A-F0-9-]{36}" | head -1)
-fi
-
-xcrun simctl install booted "$APP_PATH"
-xcrun simctl launch booted "$BUNDLE_ID"
-sleep 4
-xcrun simctl io booted screenshot "$SHOTS/smoke_1_launch.png" 2>/dev/null
-
-# Simulate a location and confirm the UI picks it up
-xcrun simctl location booted set 45.5152,-122.6784
-sleep 5
-xcrun simctl io booted screenshot "$SHOTS/smoke_2_location.png" 2>/dev/null
-
-echo "Smoke test complete: $SHOTS/smoke_*.png"
+xcrun simctl install "$UDID" "$APP_PATH"
+xcrun simctl terminate "$UDID" com.aaronpk.overland 2>/dev/null || true
+xcrun simctl launch "$UDID" com.aaronpk.overland
+sleep 3
+xcrun simctl io "$UDID" screenshot "$SHOTS/smoke_1_launch.png"
+echo "Launch smoke check complete. Run idb_ui_test.sh for UI assertions."
