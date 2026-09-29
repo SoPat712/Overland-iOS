@@ -57,9 +57,7 @@ struct SettingsView: View {
             }
 
             Section {
-                NavigationLink {
-                    EndpointView()
-                } label: {
+                NavigationLink(value: SettingsDestination.server) {
                     Label("Server", systemImage: "antenna.radiowaves.left.and.right")
                 }
             } header: {
@@ -130,7 +128,7 @@ struct SettingsView: View {
             }
 
             Section {
-                NavigationLink("WiFi Zones") { WifiZoneListView() }
+                NavigationLink("WiFi Zones", value: SettingsDestination.wifiZones)
                 Toggle("Notifications", isOn: $bridge.notifications)
             } header: {
                 SettingsSectionHeader(title: "Automation", topic: .automation)

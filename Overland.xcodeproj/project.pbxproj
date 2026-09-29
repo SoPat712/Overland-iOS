@@ -19,8 +19,11 @@
 
 
 /* Begin PBXBuildFile section */
+		A05500000000000000000002 /* NativeTabController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A05500000000000000000001 /* NativeTabController.swift */; };
+		A04400000000000000000002 /* MapControlPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A04400000000000000000001 /* MapControlPanel.swift */; };
         A03300000000000000000002 = {isa = PBXBuildFile; fileRef = A03300000000000000000001; };
 		A06600000000000000000002 /* RecentLocationHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A06600000000000000000001 /* RecentLocationHistory.swift */; };
+		A07700000000000000000002 /* HistoryPlaybackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A07700000000000000000001 /* HistoryPlaybackView.swift */; };
         A02200000000000000000002 = {isa = PBXBuildFile; fileRef = A02200000000000000000001; };
 		0F3E5210201E543200DCFAA4 /* OpenSansCondensed-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0F3E520E201E543200DCFAA4 /* OpenSansCondensed-Bold.ttf */; };
 		0F3E5211201E543200DCFAA4 /* OpenSansCondensed-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0F3E520F201E543200DCFAA4 /* OpenSansCondensed-Light.ttf */; };
@@ -64,7 +67,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A05500000000000000000001 /* NativeTabController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeTabController.swift; sourceTree = "<group>"; };
+		A04400000000000000000001 /* MapControlPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapControlPanel.swift; sourceTree = "<group>"; };
 		A06600000000000000000001 /* RecentLocationHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentLocationHistory.swift; sourceTree = "<group>"; };
+		A07700000000000000000001 /* HistoryPlaybackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryPlaybackView.swift; sourceTree = "<group>"; };
         A03300000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentLocationMarker.swift; sourceTree = "<group>"; };
         A02200000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsHelpView.swift; sourceTree = "<group>"; };
 		0F3E520E201E543200DCFAA4 /* OpenSansCondensed-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "OpenSansCondensed-Bold.ttf"; path = "Fonts/OpenSansCondensed-Bold.ttf"; sourceTree = SOURCE_ROOT; };
@@ -234,7 +240,10 @@
 				0FCAFE00F00D0000000000E4 /* SettingsView.swift */,
                 A02200000000000000000001,
                 A03300000000000000000001,
+				A04400000000000000000001 /* MapControlPanel.swift */,
 				A06600000000000000000001 /* RecentLocationHistory.swift */,
+				A07700000000000000000001 /* HistoryPlaybackView.swift */,
+				A05500000000000000000001 /* NativeTabController.swift */,
 				0FCAFE00F00D0000000000E5 /* EndpointView.swift */,
 				0FCAFE00F00D0000000000E6 /* TripView.swift */,
 				0FCAFE00F00D0000000000E8 /* SteppedSlider.swift */,
@@ -407,7 +416,10 @@
 				0FCAFE00F00D0000000000F4 /* SettingsView.swift in Sources */,
                 A02200000000000000000002,
                 A03300000000000000000002,
+				A04400000000000000000002 /* MapControlPanel.swift in Sources */,
 				A06600000000000000000002 /* RecentLocationHistory.swift in Sources */,
+				A07700000000000000000002 /* HistoryPlaybackView.swift in Sources */,
+				A05500000000000000000002 /* NativeTabController.swift in Sources */,
 				0FCAFE00F00D0000000000F5 /* EndpointView.swift in Sources */,
 				0FCAFE00F00D0000000000F6 /* TripView.swift in Sources */,
 				0FCAFE00F00D0000000000F8 /* SteppedSlider.swift in Sources */,

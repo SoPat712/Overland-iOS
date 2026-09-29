@@ -113,7 +113,6 @@ struct EndpointView: View {
                 Section { Text("Saved").foregroundStyle(.secondary) }
             }
         }
-        .tabBarClearance()
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)

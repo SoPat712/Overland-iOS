@@ -28,8 +28,9 @@ struct WifiZoneListView: View {
                 reload()
             }
         }
-        .tabBarClearance()
         .navigationTitle("WiFi Zones")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 SettingsHelpButton(topic: .automation)
@@ -40,6 +41,7 @@ struct WifiZoneListView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Add Zone")
             }
         }
         .sheet(isPresented: $showingAddZone) {

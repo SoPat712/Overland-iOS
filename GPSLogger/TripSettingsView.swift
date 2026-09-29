@@ -67,7 +67,6 @@ struct TripSettingsView: View {
                 Text("Keeps the screen on while a trip is in progress.")
             }
         }
-        .tabBarClearance()
         .navigationTitle("Trip Settings")
         .onAppear { bridge.refresh() }
     }

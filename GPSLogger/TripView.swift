@@ -3,10 +3,10 @@ import MapKit
 
 struct TripView: View {
     @State private var bridge = GLManagerBridge.shared
-    @State private var camera = MapCameraPosition.userLocation(fallback: .automatic)
-    @State private var points: [[String: NSNumber]] = []
-    @State private var scrubID: Int64?
-    @State private var followingLive = true
+    @Binding var camera: MapCameraPosition
+    @Binding var trip: TripMapState
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .caption) private var timelineHeight: CGFloat = 34
 
     private let modes: [(String, String)] = [
         ("walk", "figure.walk"), ("run", "figure.run"), ("bicycle", "bicycle"), ("car", "car.fill"),
@@ -17,132 +17,86 @@ struct TripView: View {
 
 
     var body: some View {
-        map
-        .safeAreaInset(edge: .bottom, spacing: 8) {
-            VStack(spacing: 8) {
-                if bridge.tripInProgress {
-                    scrubber
-                }
-                card
+        VStack(spacing: 8) {
+            if bridge.tripInProgress {
+                scrubber
             }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    TripSettingsView()
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
-                }
-                .accessibilityLabel("Trip Settings")
-            }
+            card
         }
         .onAppear {
             bridge.refresh()
-            reloadPoints()
-        }
-        .onChange(of: bridge.tick) { _, _ in
-            if bridge.tripInProgress {
-                reloadPoints()
-            } else if !points.isEmpty {
-                points = []
-                scrubID = nil
-                followingLive = true
-            }
         }
     }
 
-    // MARK: Map
-
-    private var isLive: Bool { followingLive }
-
-    private var scrubIndex: Int? {
-        guard let scrubID else { return nil }
-        return points.firstIndex { $0["id"]?.int64Value == scrubID }
-    }
-
-    private var map: some View {
-        Map(position: $camera) {
-            UserAnnotation { CurrentLocationMarker() }
-            if displayCoords.count > 1 {
-                MapPolyline(coordinates: displayCoords)
-                    .stroke(.blue, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
-            }
-            if !isLive, let (coord, _) = scrubbedPoint {
-                Marker("Trip point", systemImage: "mappin.circle.fill", coordinate: coord)
-                    .tint(.blue)
-            }
-        }
-        .mapControls {
-            MapUserLocationButton()
-        }
-        .onChange(of: bridge.lastLocationText) { _, newValue in
-            guard followingLive, newValue != "–" else { return }
-            camera = .userLocation(fallback: .automatic)
-        }
-    }
+    private var isLive: Bool { trip.followingLive }
 
     // MARK: Scrubber
 
     private var scrubber: some View {
         VStack(spacing: 8) {
             HStack {
-                Text(isLive ? "Live" : timeLabel(scrubIndex) ?? "--:--:--")
+                Text(isLive ? "Live" : timeLabel(trip.scrubIndex) ?? "--:--:--")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(isLive ? .green : .secondary)
                 Spacer()
                 if !isLive {
                     Button("Live") {
-                        followingLive = true
-                        scrubID = points.last?["id"]?.int64Value
+                        trip.followingLive = true
+                        trip.scrubID = trip.points.last?["id"]?.int64Value
                         camera = .userLocation(fallback: .automatic)
                     }
                     .font(.caption.bold())
                     .tint(.green)
                 }
             }
-            if points.count > 1 {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 8) {
-                        ForEach(points.indices, id: \.self) { i in
-                            Button {
-                                followingLive = false
-                                scrubID = points[i]["id"]?.int64Value
-                                focusScrub()
-                            } label: { chip(i) }
-                            .buttonStyle(.plain)
-                            .id(points[i]["id"]?.int64Value ?? Int64(i))
+            Group {
+                if trip.points.count > 1 {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: 8) {
+                            ForEach(trip.points.indices, id: \.self) { i in
+                                Button {
+                                    trip.followingLive = false
+                                    trip.scrubID = trip.points[i]["id"]?.int64Value
+                                    focusScrub()
+                                } label: { chip(i) }
+                                .buttonStyle(.plain)
+                                .id(trip.points[i]["id"]?.int64Value ?? Int64(i))
+                            }
                         }
+                        .scrollTargetLayout()
+                        .padding(.horizontal, 4)
                     }
-                    .scrollTargetLayout()
-                    .padding(.horizontal, 4)
+                    .scrollTargetBehavior(.viewAligned)
+                    .scrollPosition(id: Binding(
+                        get: { trip.scrubID },
+                        set: { id in
+                            guard let id, id != trip.scrubID else { return }
+                            trip.scrubID = id
+                            if id != trip.points.last?["id"]?.int64Value { trip.followingLive = false }
+                            if !trip.followingLive { focusScrub() }
+                        }
+                    ))
+                } else {
+                    Color.clear
+                        .accessibilityHidden(true)
                 }
-                .scrollTargetBehavior(.viewAligned)
-                .scrollPosition(id: Binding(
-                    get: { scrubID },
-                    set: { id in
-                        guard let id, id != scrubID else { return }
-                        scrubID = id
-                        if id != points.last?["id"]?.int64Value { followingLive = false }
-                        if !followingLive { focusScrub() }
-                    }
-                ))
-                .frame(height: 34)
             }
+            .frame(height: max(34, timelineHeight))
         }
         .padding(12)
-        .glassPanel(cornerRadius: 20)
         .padding(.horizontal)
         .padding(.bottom, 4)
     }
 
     private func chip(_ i: Int) -> some View {
-        let selected = !isLive && scrubIndex == i
-        let live = isLive && i == points.count - 1
+        let selected = !isLive && trip.scrubIndex == i
+        let live = isLive && i == trip.points.count - 1
         return Text(timeLabel(i) ?? "")
             .font(.caption2.monospacedDigit())
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
+            .frame(minHeight: max(34, timelineHeight))
+            .contentShape(Capsule())
             .background {
                 Capsule().fill(selected ? AnyShapeStyle(Color.blue.opacity(0.35)) : live ? AnyShapeStyle(Color.green.opacity(0.25)) : AnyShapeStyle(.quaternary.opacity(0.7)))
             }
@@ -153,23 +107,31 @@ struct TripView: View {
 
     private var card: some View {
         VStack(spacing: 14) {
-            HStack(spacing: 16) {
-                VStack(spacing: 2) {
-                    Text("DISTANCE").font(.caption2).foregroundStyle(.secondary)
-                    Text(distText).font(.title3.monospacedDigit())
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(spacing: 10) {
+                    tripStat("DISTANCE", value: distText)
+                    tripStat("TIME", value: durationText)
                 }
-                .frame(maxWidth: .infinity)
-                VStack(spacing: 2) {
-                    Text("TIME").font(.caption2).foregroundStyle(.secondary)
-                    Text(durationText).font(.title3.monospacedDigit())
+            } else {
+                HStack(spacing: 16) {
+                    tripStat("DISTANCE", value: distText)
+                    tripStat("TIME", value: durationText)
                 }
-                .frame(maxWidth: .infinity)
             }
 
-            HStack {
-                Text("Travel Mode").font(.subheadline)
-                Spacer()
-                modePicker
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Travel Mode").font(.subheadline)
+                    modePicker
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                HStack {
+                    Text("Travel Mode").font(.subheadline)
+                    Spacer()
+                    modePicker
+                }
             }
 
             if !bridge.tripInProgress {
@@ -181,10 +143,9 @@ struct TripView: View {
 
             Button {
                 bridge.tripInProgress ? GLManager.shared().endTrip() : GLManager.shared().startTrip()
-                scrubID = nil
-                followingLive = true
+                trip = TripMapState()
+                camera = .userLocation(fallback: .automatic)
                 bridge.refresh()
-                reloadPoints()
             } label: {
                 Label(bridge.tripInProgress ? "Stop Trip" : "Start Trip",
                       systemImage: bridge.tripInProgress ? "stop.fill" : "play.fill")
@@ -195,9 +156,21 @@ struct TripView: View {
             .glassButtonStyle(prominent: true, tint: bridge.tripInProgress ? .red : .blue)
         }
         .padding(16)
-        .glassPanel(cornerRadius: 24)
         .padding(.horizontal)
         .padding(.bottom, 4)
+    }
+
+    private func tripStat(_ title: String, value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.title3.monospacedDigit())
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var modePicker: some View {
@@ -214,31 +187,6 @@ struct TripView: View {
 
     // MARK: Data
 
-    private var coords: [CLLocationCoordinate2D] {
-        points.map {
-            CLLocationCoordinate2D(
-                latitude: $0["latitude"]?.doubleValue ?? 0,
-                longitude: $0["longitude"]?.doubleValue ?? 0
-            )
-        }
-    }
-
-    private var displayCoords: [CLLocationCoordinate2D] {
-        var upto = coords
-        if !isLive, let i = scrubIndex, points.indices.contains(i) {
-            upto = Array(upto.prefix(i + 1))
-        }
-        return downsample(upto, limit: 600)
-    }
-
-    private var scrubbedPoint: (CLLocationCoordinate2D, Date)? {
-        guard let i = scrubIndex, points.indices.contains(i),
-              let lat = points[i]["latitude"]?.doubleValue,
-              let lon = points[i]["longitude"]?.doubleValue,
-              let ts = points[i]["timestamp"]?.doubleValue else { return nil }
-        return (CLLocationCoordinate2D(latitude: lat, longitude: lon), Date(timeIntervalSince1970: ts))
-    }
-
     private var distText: String {
         let metric = (Locale.current.measurementSystem == .metric)
         let v = metric ? bridge.tripDistance / 1000 : bridge.tripDistance / 1609.34
@@ -251,34 +199,45 @@ struct TripView: View {
     }
 
     private func timeLabel(_ i: Int?) -> String? {
-        guard let i, points.indices.contains(i), let ts = points[i]["timestamp"]?.doubleValue else { return nil }
+        guard let i, trip.points.indices.contains(i), let ts = trip.points[i]["timestamp"]?.doubleValue else { return nil }
         return Date(timeIntervalSince1970: ts).formatted(date: .omitted, time: .standard)
     }
 
-    private func reloadPoints() {
-        guard let gl = GLManager.shared(), bridge.tripInProgress,
-              let arr = gl.currentTripPoints() as? [[String: NSNumber]] else {
-            points = []
-            return
-        }
-        points = arr
-        if followingLive {
-            scrubID = points.last?["id"]?.int64Value
-        } else if scrubIndex == nil {
-            scrubID = points.first?["id"]?.int64Value
-            focusScrub()
-        }
-    }
-
     private func focusScrub() {
-        guard let (coord, _) = scrubbedPoint else { return }
+        guard let coord = trip.scrubbedCoordinate else { return }
         camera = .region(MKCoordinateRegion(
             center: coord,
             span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
         ))
     }
 
-    private func downsample(_ coords: [CLLocationCoordinate2D], limit: Int) -> [CLLocationCoordinate2D] {
+}
+
+struct TripMapState {
+    var points: [[String: NSNumber]] = []
+    var scrubID: Int64?
+    var followingLive = true
+
+    var scrubIndex: Int? {
+        guard let scrubID else { return nil }
+        return points.firstIndex { $0["id"]?.int64Value == scrubID }
+    }
+
+    var scrubbedCoordinate: CLLocationCoordinate2D? {
+        guard let i = scrubIndex,
+              let lat = points[i]["latitude"]?.doubleValue,
+              let lon = points[i]["longitude"]?.doubleValue else { return nil }
+        return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
+
+    var displayCoords: [CLLocationCoordinate2D] {
+        let end = followingLive ? points.count : (scrubIndex.map { $0 + 1 } ?? points.count)
+        let coords = points.prefix(end).compactMap { point -> CLLocationCoordinate2D? in
+            guard let lat = point["latitude"]?.doubleValue,
+                  let lon = point["longitude"]?.doubleValue else { return nil }
+            return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        }
+        let limit = 600
         guard coords.count > limit, limit > 1 else { return coords }
         let stride = Double(coords.count - 1) / Double(limit - 1)
         return (0..<limit).map { coords[Int((Double($0) * stride).rounded())] }
