@@ -6,10 +6,18 @@ from pathlib import Path
 import subprocess
 import time
 
+from ui_accessibility import read_state
+
 root = Path(__file__).resolve().parent.parent
 sim = os.environ.get("SIM", "iPhone 17 Pro")
 devices = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))
-udid = next(d["udid"] for group in devices["devices"].values() for d in group if d["name"] == sim)
+requested_udid = os.environ.get("SIM_UDID")
+matches = [d for group in devices["devices"].values() for d in group
+           if d["state"] == "Booted"
+           and (d["udid"] == requested_udid if requested_udid else d["name"] == sim)]
+if len(matches) != 1:
+    raise SystemExit("Select one booted simulator with SIM_UDID or SIM")
+udid = matches[0]["udid"]
 base = ["idb", "--companion", os.environ.get("IDB_COMPANION", "localhost:10882")]
 shots = root / "Screenshots"
 capture_screenshots = os.environ.get("CAPTURE_SCREENSHOTS") == "1"
@@ -22,7 +30,7 @@ def run(*args):
 
 
 def state():
-    return json.loads(run("ui", "describe-all"))
+    return read_state(lambda *parts: run("ui", *parts))
 
 
 def element(label, kind=None):
@@ -35,7 +43,7 @@ def element(label, kind=None):
 def tap(label, kind="Button"):
     time.sleep(0.5)
     f = element(label, kind)["frame"]
-    if not (60 <= f["y"] and f["y"] + f["height"] <= 840):
+    if not (60 <= f["y"] and f["y"] + f["height"] <= 860):
         raise AssertionError(f"{label} is outside the visible screen: {f}")
     run("ui", "tap", str(round(f["x"] + f["width"] / 2)), str(round(f["y"] + f["height"] / 2)))
     time.sleep(0.7)
@@ -54,16 +62,18 @@ controls = element("Send Now", "Button")["frame"]
 tab = element("Tracker", "Button")["frame"]
 assert controls["y"] + controls["height"] < tab["y"], "Send Now overlaps the tabs"
 shot("verified_tracker.png")
+tap("Controls panel")
 tap("Trip")
 element("Start Trip", "Button")
 tap("Trip Settings")
 element("Trip Settings", "Heading")
 shot("verified_trip_settings.png")
 tap("Settings")
+assert not any(e.get("subrole") == "AXMapArea" for e in state()), "Settings exposes a map"
 for _ in range(5):
     if any(e.get("AXLabel") == "Server" and e.get("type") == "Button" and 100 < e["frame"]["y"] < 650 for e in state()):
         break
-    run("ui", "swipe", "20", "650", "20", "400", "--duration", "0.5")
+    run("ui", "swipe", "70", "650", "70", "400", "--duration", "0.5")
     time.sleep(1)
 tap("Server")
 element("Add Header", "Button")
@@ -77,7 +87,7 @@ tap("Settings")
 for _ in range(5):
     if any(e.get("AXLabel") == "Edit Min Distance Between Points" and 120 < e["frame"]["y"] < 650 for e in state()):
         break
-    run("ui", "swipe", "20", "680", "20", "430", "--duration", "0.7")
+    run("ui", "swipe", "70", "680", "70", "430", "--duration", "0.7")
     time.sleep(1.5)
 value_label = "Edit Min Distance Between Points"
 original = element(value_label, "Button")["AXValue"]
