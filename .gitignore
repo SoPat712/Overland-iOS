@@ -2,4 +2,7 @@ Pods/
 *.xcworkspace/
 xcuserdata/
 .DS_Store
-
+Screenshots/
+Prototypes/
+__pycache__/
+*.pyc

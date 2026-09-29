@@ -1,169 +1,226 @@
 Overland GPS Tracker for iOS
 ============================
 
-This app tracks your location in the background and sends the data to a server of your choosing. The app tracks:
+Overland records your location in the background and sends it to a server you
+choose. Records can include GPS coordinates, motion state, steps, and battery
+level. The app keeps data locally while offline and uploads it in batches when
+a connection is available.
 
-* GPS location
-* Motion State (walking, running, driving, cycling, stationary)
-* Steps
-* Battery level
+You can use an existing backend or build an HTTP receiver. Supported services
+and integrations include:
 
-The app gathers data even when the phone is offline, and the data is sent to the server in a batch at an interval set by the user.
-
-There are many settings available in the settings tab which allow you to adjust properties of the CoreLocation API.
-
-The app sends data to an HTTP endpoint. You can use an existing backend or build your own. The app works with:
-
-* [Compass](https://github.com/aaronpk/Compass) - a self-hosted PHP app built to save and review data from this app
+* [Compass](https://github.com/aaronpk/Compass) - a self-hosted PHP app for storing and reviewing Overland data
 * [Wayfinder](https://github.com/dontic/wayfinder) - a self-hosted app for Overland
 * [Dawarich](https://dawarich.app/) - a self-hosted alternative to Google Location History
-* [Reitti](https://www.dedicatedcode.com/projects/reitti/) - a self-hosted location tracking and analysis application
-* [PureTrack](https://puretrack.io/add-overland) - a service for tracking lightweight planes and gliders
-* [Open Humans](https://overland.openhumans.org/) - a service for tracking your data and sharing it for research purposes
-* [Icecondor](https://icecondor.com/) - a service for tracking your location, sharing with friends, and setting geofence alerts
+* [Reitti](https://www.dedicatedcode.com/projects/reitti/) - self-hosted location tracking and analysis
+* [PureTrack](https://puretrack.io/add-overland) - tracking for lightweight planes and gliders
+* [Open Humans](https://overland.openhumans.org/) - location recording and data sharing for research
+* [Icecondor](https://icecondor.com/) - location sharing and geofence alerts
 * [Geomanic](https://geomanic.com/) - a hosted trip tracking service
-* [Home Assistant](https://www.home-assistant.io/) - home automation platform, compatible with the [OwnTracks](https://www.home-assistant.io/integrations/owntracks/) format supported by Home Assistant
+* [Home Assistant](https://www.home-assistant.io/) - integration through its [OwnTracks](https://www.home-assistant.io/integrations/owntracks/) support
 
-Looking for Android support? → [Colota](https://github.com/dietrichmax/colota) ([Overland integration](https://colota.app/docs/integrations/overland))
+For Android, see [Colota](https://github.com/dietrichmax/colota) and its
+[Overland integration](https://colota.app/docs/integrations/overland).
 
 ## About this fork
 
-This is a modernized fork of Overland. Changes so far:
+This fork uses SwiftUI screens inside a native UIKit tab controller, with Liquid
+Glass on iOS 26 and later and material backgrounds on earlier versions. It
+requires iOS 17.
 
-* **SwiftUI + Liquid Glass UI** — all main screens rebuilt in SwiftUI with
-  Liquid Glass styling on iOS 26+ and clean fallbacks on iOS 17–25
-* **Location source selection** — iOS 17 live updates handle Best accuracy with automatic
-  pausing; the CLLocationManager source preserves custom accuracy and disabled pausing.
-  Background behavior and battery use still require device testing.
-* **Server controls** — custom HTTP headers, validated URLs, acknowledgment options,
-  and the last 50 send outcomes for the current session
-* **Trip route** — live map and a timeline of the latest 1,000 recorded trip points
-* **Multiple WiFi zones** — configure any number of networks with a fixed
-  location; SSID matching with optional BSSID tiebreaker (#151, #152)
-* **Merged PR #180** (yniverz): precision settings with sliders, max-accuracy
-  point filter, and stop-updates-when-stationary with automatic resume
-* **Bug fixes**: OwnTracks crash on empty queue (#188), `locations_in_payload`
-  always 1 (#197), OwnTracks `tst` epoch offset (#196)
-* **Better TLS diagnostics** — server certificate failures now show the
-  concrete trust errors (hostname mismatch, expired, untrusted root, missing
-  intermediates) instead of a generic message
+Tracker and Trip share a map with a draggable panel behind the native tab bar.
+Drag the handle above the tabs to expand or collapse the controls. The panel
+fits its contents; on small screens or with large text, it stops at the available
+height and lets you scroll. Settings has its own page without a map. Sliders
+support exact numeric entry.
 
-Minimum deployment target is iOS 17. See `AGENTS.md` for build and test
-commands. See [AUDIT.md](AUDIT.md) for verified issue coverage and release limitations.
+UIKit handles tab selection, drag gestures, icons, and labels. The panel uses
+regular `UIGlassEffect` on iOS 26 and later, with a material fallback on older
+versions. The tabs stay in place as the panel resizes.
+
+The fork includes PR #180's precision controls, accuracy filter, and stationary
+stopping, plus its later notification, persisted pause-state, and safe-settings
+follow-ups. It also adds multiple WiFi zones with optional BSSID matching,
+custom HTTP headers, server-certificate diagnostics, and the last 50 send
+outcomes for the current app session.
+
+Queue and networking fixes address empty OwnTracks sends, incorrect timestamps,
+and batch counts. The location source preserves custom accuracy and pause
+settings. Background reliability and battery use still need real-device testing.
+
+See [AGENTS.md](AGENTS.md) for build commands and [BATTERY_AUDIT.md](BATTERY_AUDIT.md)
+for unresolved background-tracking findings. Battery improvements require device
+measurements; simulator checks do not establish energy savings.
 
 ## Documentation
 
-### Tracker Screen
-<img src="Screenshots/main.png" width="300">
+### Tracker screen
 
-The Tracker screen is where you control whether the app is active, and shows you some basic stats of what the app is doing. Start/Stop Tracking controls location recording. Trips have their own tab with travel mode, distance, duration, route and timeline.
+Start Tracking begins location collection. Stop Tracking asks for confirmation;
+Keep Tracking dismisses the alert without stopping. The map follows your location
+until you pan it. The vertical pill at the top right contains map-style and
+recenter controls. Tap Show My Location to follow again.
 
-<!-- * Top line - The top line will indicate the database name being reported to if you are using the [Compass](https://github.com/aaronpk/Compass) tracking server. -->
-* `Age` - The age of the last location point that was reported by the OS. You can use this to get a sense of how much data you are recording.
-* `Location` - Shows the latitude/longitude and horizontal accuracy of the last location update received.
-* `Speed` - The speed of the last location update, shown in the sign at the top right.
-* `Queued` - This number indicates how many location points are stored in the application's internal database that are not yet sent.
-* `Last Sent` - Indicates how long ago the last batch was successfully sent to the server.
-* `Send Now` - Tapping this button will send the queued data to the server immediately.
-* `Send Interval` - This slider controls the interval at which the app sends data to the server. Using the network connection is a huge source of battery drain, so you can save battery by sending infrequently to the server. The slider covers 0–3600 seconds; 0 is Off. Tap its value to enter an exact number. This is useful when you know you don't have a network connection such as during flights. Data is queued up and will be sent once you enable sending later.
-The following controls are on the Trip tab:
-* `Duration` - When a trip is active, indicates how long the trip has been going for.
-* `Distance` - When a trip is active, indicates how far has been traveled in this trip.
-* `Start/Stop` - Starts and stops a trip record. After stopping a trip, the trip record is written to the database and sent to the server along with the location points.
-<!-- * `DB` - This debugging line reports how many of the various types of records are currently stored in the DB waiting to be sent. -->
+The current-location dot pulses while the app is active. Reduce Motion and
+Low Power Mode disable the animation. The halo is decorative; it does not
+measure location accuracy.
 
+* `Updated` shows the time since the last accepted location point.
+* `Current location` shows its coordinates and reported horizontal accuracy.
+* `Speed` shows the most recent speed at the top left.
+* `Queued` counts records waiting to be sent.
+* `Last Sent` shows the time since the last acknowledged upload.
+* `Send Now` uploads queued data immediately.
+* `Send Every` sets the automatic send interval. The slider covers 0–3600 seconds;
+  0 means Off. Tap the value to enter an exact number. Off leaves data queued for
+  manual sending or a later automatic upload. Longer intervals reduce the number
+  of network requests.
+
+The ruler at the top of the Tracker panel keeps the selected tick in the center.
+Older points lie to its left and **Live** lies to its right. Drag right to browse
+older points, or left to return to Live. A tap alone does not change modes.
+Each tick selects one recorded point; the step buttons also move one point at a
+time. Play follows the time between fixes
+at 1×, 5×, 10×, 20×, or 50× recorded time. The marker and camera move between
+fixes; this straight-line interpolation is for display only. The map shows the
+traveled route in blue and the remaining route as a dashed teal line. The details
+and replay speedometer show the last logged point's values, and **View upload
+record** shows its complete GeoJSON or OwnTracks JSON. A queued record is not
+proof of delivery.
+
+Replay keeps a separate local copy of accepted location records for 24 hours,
+including points removed from the send queue after upload. Collection starts
+with this app version; previously sent points cannot be recovered. The history
+does not change tracking settings, upload timing, or server requests. Existing
+replay stores migrate in place; record IDs remain unique after old points expire.
+
+MapKit's Apple Maps credit and Legal link stay on the map, just above the glass
+panel as it expands or folds. [Apple's Maps guidance](https://developer.apple.com/design/human-interface-guidelines/maps)
+calls for both to remain visible with the map. MapKit reframes map content as
+that clearance changes.
+
+Trip uses the same map and preserves its position when you switch tabs.
+Choose a travel mode and tap Start Trip to record a route. The panel shows
+distance, duration, and a timeline of the latest 1,000 points. Select a point to
+inspect it, or tap Live to return to your location. Stop Trip writes a trip record
+for upload alongside the location points. The map pill also opens Trip Settings
+on a separate page. Tap Trip to return to the map and its recenter control.
 
 ### Settings
 
-<img src="Screenshots/settings.png" width="300">
+Open Settings from the bottom bar. Its form fills the page and scrolls above
+the tabs.
+The Usage Preset selector applies a set of tracking preferences. Section info
+buttons explain the controls and link to their sources.
 
-The Settings screen allows you to set the various options in the Overland app as well as parameters of the iOS CoreLocation API, which gives you fine-grained control over how the tracker behaves.
+* `Server` sets the endpoint, access token, device ID, custom headers, and
+  acknowledgment policy.
+* `Tracking Enabled` starts or stops location collection. Stopping preserves
+  queued records.
+* `Location Access` shows iOS permission status. Use the access buttons when
+  available, or open iOS Settings to change permission and Precise Location.
 
-* `Server` - Tap this row to set the endpoint that the app will send data to. You can also configure a device ID which will be included in each record, and an access token which will be sent in the HTTP Authorization header.
-* `Tracking Enabled` - The "Tracking Enabled" switch enables and disables tracking globally. When it's set to off, the app stops requesting location updates, and won't record or send any more data.
+**Location updates**
 
-**iOS Settings**
+These controls configure [Core Location](https://developer.apple.com/reference/corelocation):
 
-The settings in this section set properties on the CoreLocation API. They are meant to give you direct control over how you want to tell the operating system to deliver data to the app. It is worth reading the [iOS documentation](https://developer.apple.com/reference/corelocation) for more details, but a summary of them is below.
+* `Update Mode` selects Standard, Significant, Both, or Off. Standard requests
+  regular updates for detailed routes. Significant uses
+  [significant-change monitoring](https://developer.apple.com/reference/corelocation/cllocationmanager/1423531-startmonitoringsignificantlocati)
+  for coarse movement history. Both enables both sources. Off disables those
+  sources; visit tracking is separate. iOS controls when updates arrive.
+* `Visit Tracking` records iOS-detected arrivals and departures. Events can arrive
+  after the visit occurred.
+* `Accuracy Preset` selects Custom, Best, or Navigation. Custom exposes
+  `Desired Accuracy` in meters. A smaller value requests more precision and can
+  require more time and power; it does not guarantee the accuracy of a fix.
+  See Apple's [desiredAccuracy](https://developer.apple.com/reference/corelocation/cllocationmanager/1423836-desiredaccuracy) reference.
+* `Activity Type` describes the expected movement to iOS and helps it decide when
+  to pause. It does not label the trip or classify recorded motion.
+  See [activityType](https://developer.apple.com/reference/corelocation/cllocationmanager/1620567-activitytype).
+* `Show Background Indicator` requests the system's visible location indicator.
+  It does not grant permission or keep the app running unconditionally. The
+  linked [Apple forum guidance](https://developer.apple.com/forums/thread/726945)
+  discusses its effect in a particular background-tracking configuration.
+* `Pause Updates Automatically` lets iOS pause standard updates. Resume timing
+  depends on iOS and the enabled services; it is not immediate or guaranteed.
+* `Resume After Moving` creates an exit region around the last fix after an
+  automatic pause. Leaving that region can resume an enabled tracker.
+  The distance is shared with trip settings.
 
-* `Continuous Tracking Mode`
-  * "Standard" will request continuous location updates in the background. Use this if you want to be able to draw detailed tracks of your travels.
-  * "Significant Location" will register for [significant location changes](https://developer.apple.com/reference/corelocation/cllocationmanager/1423531-startmonitoringsignificantlocati). Significant change events are triggered for example when you move to a new cell tower or when your nearby visible wifi access points change. It's not an exact science, and may be triggered more or less often than you expect. This will result in _much less_ data collected, but will also use barely any noticeable battery.
-  * "Both" will request both types of updates.
-* `Visit Tracking` - Enables "Visit" tracking, which will record an update when the phone gets to a new location after about 3 minutes.
-* `Desired Accuracy` - Sets the [desiredAccuracy](https://developer.apple.com/reference/corelocation/cllocationmanager/1423836-desiredaccuracy) property of the location manager. This is only a request for the general level of accuracy, not a guarantee. Setting to "Best" will use the most battery but will get highest accuracy location updates. Setting to "3km" will save the most battery but will result in infrequent location updates.
-* `Activity Type` - According to Apple, "The location manager uses the information in this property as a cue to determine when location updates may be automatically paused.". See [activityType](https://developer.apple.com/reference/corelocation/cllocationmanager/1620567-activitytype) for more details.
-* `Show Background Location Indicator` - Setting this to "Always" will cause the location indicator in your iOS menu bar to be activated whenever the app is tracking your location. With the visible indicator, your app is more likely to continue to receive data in the background according to [this post on the Apple forums](https://developer.apple.com/forums/thread/726945).
-* `Pause Updates Automatically` - Enabling this will use the iOS API for automatically pausing location updates. When disabled, it will prevent the OS from pausing location updates. Pausing location updates automatically is a great way to save battery when you are not moving for extended periods of time, although it does not always pick up tracking again immediately when you start moving. In some initial testing, the automatic pause tends to trigger about 10 minutes after you've stopped moving.
-* `Location Authorization Status` - When you first launch the app, you'll need to request location permissions from the button here. Once you've requested permission twice, you should see it say "Always", which means the app will be able to collect data in the background. If you change the value in the iOS Settings app, this will show you the current status to help you troubleshoot why the app isn't getting updates in the background anymore.
+**Recording and sending**
 
-**Overland Settings**
+* `Logging Mode` controls storage and payload format. All Data queues GeoJSON
+  records. Only Latest replaces queued location data with the latest fix.
+  OwnTracks retains unsent fixes and sends one OwnTracks record per request.
+* `Locations per Batch` limits records in each GeoJSON request. Smaller batches
+  produce smaller requests; larger batches clear a backlog with fewer requests.
+  It does not change the send interval.
+* `Min Distance Between Points` discards fixes closer than the selected distance
+  to the last accepted point.
+* `Min Time Between Points` discards fixes received too soon after the last
+  accepted point.
+* `Max Accuracy of Points` rejects fixes whose horizontal uncertainty exceeds
+  the threshold. A 10 m limit accepts reported uncertainty of 10 m or less.
+  Lower values can leave gaps when reception is poor.
+* `Stop Within Radius` and `Stop After` pause standard updates when accepted
+  fixes remain within the radius for the configured time. They apply to normal
+  Both mode, not an active trip. Significant-change monitoring continues and can
+  restart standard updates after movement. The delay may leave a gap in the route.
+* `Notifications` controls local tracking and send notifications. iOS notification
+  permission is also required.
+* `WiFi Zones` assigns fixed coordinates to a network name. BSSID can distinguish
+  access points with the same name. Matching requires iOS to expose network identity.
 
-The settings in this section control features specific to the Overland app.
+Distance, time, and accuracy filters act on points after iOS delivers them.
+They do not set the GPS sampling rate. Set a filter to Off to disable it.
 
-* `Logging Mode`
-  * "All Data" will save every location update received and send to the server in a batch.
-  * "Only Latest" will send only one update to the server at a time based on the sending interval. If you configure the endpoint URL to send data in the query string then you should use this setting. Experiment with the other settings to control how frequently you get data sent from the app.
-  * "Owntracks" will change the format of the data logged to Owntracks format, and will also send only one location update at a time. This can also be used with Home Assistant. See the Home Assistant section below for details.
-* `Locations per Batch` - Controls the number of location updates that will be sent with each HTTP request when in "All Data" mode. Setting this to 50 will mean more requests to the server are required to flush the queue, but each request will be smaller. Setting this to 1000 means you'll be able to flush the queue with fewer requests, but each request will be much larger. Each location point can be around 600 bytes when serialized as JSON, so sending 1000 points in a request will mean the request body may be around 600kb. Lower batch sizes are likely better for flaky network connections, and larger batch sizes are good when on a reliable connection. Note that this does not affect the frequency at which data is sent to the server.
-* `Resume with Geofence` - This is an attempt at overcoming the limitations of the "Pause Updates Automatically" feature. Setting a radius here will register an "exit" geofence whenever location updates are paused at that location. This will attempt to get the app woken up when the user leaves the area again, and when triggered, will resume tracking with the previous settings.
-* `Min Distance Between Points` - When set, the app will discard any location updates closer than the distance selected. For example you can set the value to 50 meters to only record an update if the phone moves 50 meters from the last location. Note: This does not have a noticeable effect on battery life, since the OS will have already delivered the location data to the app by this point.
-* `Min Time Between Points` - When set, the app will discard any location updates received within the selected amount of time. For example you can set the value to 10 seconds to record an update at most every 10 seconds. Note: This does not have a noticeable effect on battery life, since the OS will have already delivered the location data to the app by this point. The default is 1 second.
-* `Max Accuracy of Points` - When set, the app will discard any location updates with an accuracy greater than the selected radius. For example you can set the value to 10 meters to only ever record updates which have an accuracy better than 10 meters.
-* `Stop Updates if within Radius` - When set, the app will stop location updates if the phone is within the specified radius of the last location update, for longer than `Stop Updates after` time. This dramatically reduces power draw when the phone is stationary, but may cause the app to miss some location updates when starting to move again. From experience iOS will notify the app after about 500 meters of travel. This setting will only be available with `Continuous Tracking Mode` set to "Both". **This setting is different to the "Pause automatically" setting, in that it forces the tracking to stop based on custom criteria.**
-* `Stop Updates after` - This setting is used in conjunction with the "Stop Updates if within Radius" setting. This is the amount of time that the app will wait before stopping location updates after the phone has been within the radius for longer than the specified time. It is only available when the `Stop Updates if within Radius` setting is set.
-* `Enable notifications` - Toggle whether the app should send push notifications about events such as when tracking has been automatically stopped and started.
-* `Configure Wifi Zone` - You can configure a wifi zone to force the app to report an exact location whenever you're connected to a specific wifi SSID. This is useful if you don't want to collect a bunch of noisy data when you're at home.
+#### Trip settings
 
-#### Trip Settings
+Trip settings override the normal accuracy, activity, logging, batch, filter,
+indicator, and pausing settings while a trip runs. Ending the trip restores
+the earlier tracking state. The resume distance is shared with normal tracking.
 
-The "Trip Settings" tab contains most of the same options as the main settings tab, but these values only apply when a trip is in progress. When a trip starts, the app will apply these settings, and when a trip ends, will revert to the main settings.
+Automatic pausing can end a trip. Leave it off if you want to end trips manually.
+Prevent Screen Lock keeps the display awake during a trip and increases display
+power use; it does not guarantee background execution.
 
-You can use this for example to record low-frequency updates continusouly, but then log high-frequency updates when you start a trip.
+#### System settings
 
-There are some additional settings specific to trips:
+Some preferences also appear in the iOS Settings app:
 
-* `Show Location Indicator During Trips` - Choose whether you want the device to show the location indicator when a trip is in progress. Enable this to help the app run continuously in the background.
-* `Prevent screen lock during trip` - Does what it says. This is another way you can be sure the app won't get killed by iOS in the background.
+* `Include tracking stats` includes diagnostic metadata about visits and the
+  app lifecycle.
+* `Consider HTTP 2XX Successful` accepts any successful 2xx response as an upload
+  acknowledgment, including an empty body. Otherwise the server must return
+  `{"result":"ok"}`. An acknowledgment removes the sent records.
+* `Include Unique ID in Logs` includes the device's vendor identifier. Device ID
+  is a separate, user-defined field.
+* `Precise Settings` belongs to the legacy interface. The SwiftUI controls always
+  provide sliders and numeric entry.
 
+#### Configuration by custom URL
 
-#### System Settings
-
-There are some additional settings in the iOS Settings app that are not exposed in the app interface itself. This is for settings that are infrequently changed or uncommon.
-
-* `Include tracking stats` - Toggle whether to include visit and app metadata in the log as well. This is useful when trying to understand the app lifecycle and how the various tracking settings affect the app's behavior, but you probably don't want it enabled for production passive tracking usage.
-* `Consider HTTP 2XX Successful` - By default, the server has to respond with a specific JSON response (`{"result":"ok"}`) in order to tell the app it has received the data and to delete the stored cache. Turning this on will consider any HTTP 2xx response code successful. Only use this if you are unable to send the JSON response from your server software, as this may inadvertently lose data if your server has errors.
-* `Include Unique ID in Logs` - Turn this on to include an additional `unique_id` in every record. This is the phone's "Unique ID" generated by Apple. The value cannot be customized, so you can use it as a reliable way to identify unique devices.
-* `Precise Settings` - Turning this on will exchange the Segmented Control of `Min Distance Between Points`, `Min Time Between Points` and `Max Accuracy of Points` in the Settings with a Slider, allowing for more precise control about when tracking data is recorded.
-
-
-
-#### Configuration by Custom URL
-
-You can send people a custom URL that will configure the app by clicking on it. Create a URL with your endpoint, token and device ID like the following:
+A setup link opens Overland and saves the endpoint, token, device ID, and
+unique-ID preference:
 
 ```
 overland://setup?url=https%3A%2F%2Fexample.com%2Fapi&token=1234&device_id=1&unique_id=yes
 ```
 
-Tapping that URL on a device with the app installed will launch the app and save the values in the configuration. This is a quick way to configure many devices since it bypasses the need to enter the values in the settings screen.
+Query parameters:
 
-Query Parameters:
+* `url` - the receiving HTTP(S) endpoint
+* `token` - the access token
+* `device_id` - the user-defined device identifier
+* `unique_id=yes` - enable the vendor identifier in supported records
 
-* `url` - The server URL to post data to
-* `token` - The access token to use in requests
-* `device_id` - Set the user-defined device ID here
-* `unique_id=yes` - Set this to `yes` to toggle the "Unique ID" setting
+### Usage profiles
 
+Choose a profile for the detail you need. These are starting points; test
+background behavior and battery use on your device.
 
-### Usage Profiles
-
-You should decide what kind of data you are hoping to get out of this application. The controls provided will give you a lot of knobs you can turn to adjust the way the app collects data. Below are some recommended presets for different applications.
-
-
-#### High Resolution Tracking
-
-To get high resolution data, you should set the following:
+#### High resolution tracking
 
 * Pause Updates Automatically: Off
 * Resume with Geofence: Off
@@ -171,14 +228,11 @@ To get high resolution data, you should set the following:
 * Activity Type: Other
 * Desired Accuracy: Best
 
-While moving, you will receive up to one point per second. When you're not moving, such as when you're at your desk, etc, there may be several minutes between location updates received. This will use a lot of battery, but will result in data that can be used to generate a picture similar to this level of detail.
+This configuration requests detailed routes and keeps standard updates active.
+It can use more power than coarse tracking. iOS still controls delivery, so
+one point per second is not guaranteed.
 
-![GPS Logs](https://aaronparecki.com/gps/pdx-gps.jpg)
-
-
-#### Battery Saving / Low Resolution
-
-To use very little battery, you can still get enough location info to know what neighborhood you're in, and likely also when you leave and return home.
+#### Battery saving / low resolution
 
 * Pause Updates Automatically: On
 * Resume with Geofence: 500m
@@ -186,21 +240,24 @@ To use very little battery, you can still get enough location info to know what 
 * Activity Type: Other
 * Desired Accuracy: 100m
 
-This will use much less battery than high resolution, while still gathering enough data you can use to roughly geotag posts or know what neighborhood you're in. For even more battery savings, you can set Significant Location Only, which reduces the amount of data you log. Actual battery use varies.
+Significant-change monitoring suits neighborhood-scale history rather than
+detailed routes. The stored accuracy and pause settings apply to standard
+updates; they do not control the significant-change service.
 
-#### Battery Saving / High Resolution
+#### Battery saving / high resolution
 
 * Tracking Mode: Both
 * Activity Type: Other
 * Stop Updates if within Radius: >10m
 * Stop Updates after: <5m
 
-This combines standard updates while moving with significant-change monitoring while stationary. Detail and battery use depend on the accuracy setting, device and movement. Significant-change delivery is controlled by iOS; battery savings and an exact resume distance are not guaranteed.
+This combines standard updates while moving with significant-change monitoring
+while stationary. Resume timing depends on iOS. Neither an exact resume distance
+nor a battery-saving percentage has been established for this fork.
 
 ## Configuration guide
 
-Settings starts with a Usage Preset selector. These are tracking-use profiles, not server-app
-connection templates. Tap the info icon beside a section for explanations and source links.
+The presets in Settings apply these values:
 
 | Preset | Mode | Accuracy | Activity | Pausing / resume | Stationary stop |
 | --- | --- | --- | --- | --- | --- |
@@ -210,49 +267,38 @@ connection templates. Tap the info icon beside a section for explanations and so
 | Walking / Running | Standard | Best | Fitness | Off / Off | Off |
 | Driving | Standard | Navigation | Automotive | Off / Off | Off |
 
-All profiles disable saved-point filters and visit tracking. The background indicator is on except
-in Low Power. Stop After is stored as 180 seconds in every profile but only matters with an enabled
-stationary radius. Presets leave credentials, server, logging format, sending, trip-specific settings and
-queued records unchanged. The resume-region distance is shared with trips and does change. They preserve whether tracking is enabled. Applying is disabled during
-a trip. A manual change to a profile-controlled setting makes the selector show Custom.
+All presets disable saved-point filters and visit tracking. The background
+indicator is on except in Low Power. Each stores Stop After as 180 seconds;
+it takes effect only when the stationary radius is enabled.
 
-The first three profiles adapt the usage recommendations above. Balanced's 50 m / 180 s values,
-and the Walking / Running and Driving variants, are Overland recommendations rather than presets
-published by Apple. Treat them as starting points and measure battery use on your device.
+Presets leave server credentials, logging format, send interval, batch size,
+trip-specific settings, and queued records unchanged. They change the resume
+distance, which is shared with trips. Applying one does not start tracking.
+Finish an active trip before selecting a preset. Editing a setting covered by
+the preset changes the selector to Custom.
 
-- **Permissions:** iOS controls access and Precise Location independently of the tracking switch.
-- **Tracking mode:** Standard requests regular updates; Significant records coarse movements;
-  Both allows the app's stationary rules to pause standard updates. Visit tracking is separate.
-- **Accuracy:** Requested precision is not a guarantee. Saved-point distance/time/accuracy filters
-  discard delivered data and do not set the GPS sampling rate.
-- **Activity:** Describes expected movement to iOS; it does not classify motion or label a trip.
-- **Stationary rules:** Radius/time stopping applies to normal Both mode. Automatic pausing is
-  decided by iOS and can end trips. The resume-region radius is shared with trip settings.
-- **Logging and sending:** Only Latest deliberately replaces queued location data; OwnTracks sends
-  one point per request. Batch size limits GeoJSON requests. Send Interval is checked when points
-  arrive, not by an exact background timer. Acknowledgment removes only the sent records.
-- **Server:** Token, payload identifiers, extra headers and acknowledgment policy must match the
-  receiver. Configured means a URL is saved, not that connectivity was verified. Recent Sends is
-  process-local history, not a persistent diagnostic log.
-- **Automation:** WiFi zones use configured coordinates for matching networks when iOS exposes
-  network identity. Notifications require both the app toggle and iOS permission.
-- **Trips:** Trip settings override normal tracking while a trip runs. Prevent Screen Lock keeps
-  the display awake, at a power cost. The timeline covers the latest 1,000 trip points.
+The first three presets adapt the usage profiles above. Balanced's 50 m / 180 s
+thresholds and the Walking / Running and Driving variants are Overland choices.
+They are not Apple-provided presets.
+
+Automatic sends are checked when location updates arrive, not on an exact
+background timer. A server acknowledgment removes only the records sent in that
+request. Configured means a server URL is saved; it does not verify connectivity.
+Recent Sends keeps up to 50 outcomes and resets when the app restarts.
 
 Sources: [Apple desired accuracy](https://developer.apple.com/documentation/corelocation/cllocationmanager/desiredaccuracy),
 [activity type](https://developer.apple.com/documentation/corelocation/cllocationmanager/activitytype),
 [significant-change monitoring](https://developer.apple.com/documentation/corelocation/cllocationmanager/startmonitoringsignificantlocationchanges()),
 [Core Location](https://developer.apple.com/documentation/corelocation), and
 [Apple engineer's iOS 16.4 background guidance](https://developer.apple.com/forums/thread/726945).
-The forum guidance concerns a specific combined-service configuration; it is not a guarantee of
-background continuity on every OS. Descriptions of queueing, trip overrides and filtering reflect
-this fork's implementation rather than Core Location API guarantees.
+The forum advice applies to a particular configuration. Queueing, filtering, and
+trip overrides described here are behavior implemented by this fork.
 
 ## API
 
-The app will post the location data to the configured endpoint.
+Overland posts location data to the configured endpoint.
 
-If the endpoint URL has any template parameters, they will be replaced with the value of the most recent location update. The template parameters you can use are below:
+Endpoint URL templates use values from the most recent location update:
 
 * `%TS` - Timestamp (ISO 8601, e.g. `2023-12-05T16:50:25Z`)
 * `%LAT` - Latitude
@@ -356,7 +402,8 @@ If you are unable to return this JSON, you can set the "Consider HTTP 2XX Succes
 
 #### Configuration by Server Response
 
-You can configure all of the settings in the app by having your server return new settings in the JSON response when it uploads data. The documentation of the JSON structure and all possible config values is below.
+The server can change the settings listed below through its upload response.
+The example lists accepted alternatives; choose one value for each property.
 
 ```json
 
@@ -395,18 +442,27 @@ You can configure all of the settings in the app by having your server return ne
 }
 ```
 
-Note that most values are strings, with the exception of some that are numbers or boolean.
+Most values are strings; batch sizes are numbers and toggles are booleans.
+The example's `stop_time` shorthand is outdated: the current implementation
+accepts `1min`, `2min`, `5min`, `10min`, or `20min`.
 
-The settings under `main` correspond to the settings in the main settings screen in the UI, and the settings under `trip` correspond to the settings when a trip is in progress.
+The `main` settings control normal tracking; `trip` settings apply during a trip.
 
-IMPORTANT: It is very possible to send a setting to the phone that will disable logging completely, which creates a dead end, since the phone will then never check back with the server for updated settings! The main setting that can cause this to happen is `send_interval=off`. Setting `tracking_mode=off` means only "visits" will be tracked, which will be received extremely infrequently, so you won't have a chance to change the setting to something else until after the phone checks in after that.
+Setting `send_interval=off` disables automatic uploads. The server cannot send
+another configuration response until the app makes a request, so the user may
+need to re-enable sending or tap Send Now. Setting `tracking_mode=off` disables
+standard and significant-change updates; visits remain a separate setting.
 
-It is best to only send properties in the response that you want to change at that moment, rather than always sending the values on every response. Treat it like pressing the button in the UI, only send the response when you want to press the button.
+Include only the properties you intend to change. Repeating settings in every
+response can overwrite choices made in the app.
 
 
 ### Current Location
 
-If the number of locations in the queue are more than twice the batch size, then the request will also contain a property `current` with the most recent location point stored by the device. (This point will not be one of the ones in the batch.) If you need your backend to be aware of the current location, this allows you to ignore the batch being uploaded and instead use just that point.
+When the queue contains more records than the batch size and a latest fix is
+available, a GeoJSON request also includes `current`. This field describes that
+fix even while older records are being uploaded. A backend can use it to display
+the current position without waiting for the backlog to clear.
 
 
 ### Current Trip
@@ -426,7 +482,8 @@ Setting the Logging Mode to "Owntracks" will record the data in a format that ca
 
 https://www.home-assistant.io/integrations/owntracks/
 
-Only the latest point will be sent every interval, so you can experiment with the various settings to get this to record as much or as little data as you want.
+OwnTracks sends one queued point per request and retains the remaining points
+for later sends.
 
 In the Overland Server URL setup, set the "Device ID" to the Owntracks topic you want, for example "username/device". This will be appended to the string "owntracks/" for the topic URL. Use the "Access Token" field for your Home Assistant username.
 
@@ -436,7 +493,7 @@ In the Overland Server URL setup, set the "Device ID" to the Owntracks topic you
 
 This assumes you have [Xcode](https://developer.apple.com/xcode/) and [Homebrew](https://brew.sh) installed. A paid Apple Developer account is not needed.
 
-* `git clone https://github.com/aaronpk/Overland-iOS.git && cd Overland-iOS`
+* `git clone https://github.com/SoPat712/Overland-iOS.git && cd Overland-iOS`
 * `brew install cocoapods`
 * `pod install`
 * `open Overland.xcworkspace`
@@ -449,6 +506,61 @@ This assumes you have [Xcode](https://developer.apple.com/xcode/) and [Homebrew]
 * On your iOS device: Settings -> General -> Device Management -> Developer App -> Trust
 * You can now launch the Overland app on your iOS device
 
+
+### Simulated route test
+
+```bash
+python3 ci_scripts/simulated_route_test.py /path/to/Overland.app
+```
+
+This test requires the iOS 27 simulator runtime and IDB. Shut down other
+simulators first. The script creates a disposable iPhone simulator, installs
+the supplied app, grants location and motion access, and records a fake Portland
+route against a localhost receiver. The receiver rejects the first upload to
+check that retry preserves its records. It also checks replay-store migration,
+record preservation, and ID continuity after the last old point expires.
+
+The test also checks panel resizing, map controls, trip recording, tab switching,
+timeline selection, panning, stop confirmation, and exact numeric entry in Settings.
+It removes its simulator afterward and writes results to
+`/tmp/overland-fake-route-results.json`. It takes no screenshots and uses no
+production endpoint. Pre-granted permissions and simulated movement do not test
+first-use prompts or real-device background delivery.
+
+To inspect replay without sending test locations to a server, first install and
+launch the app on a booted iPhone simulator, then run:
+
+```bash
+python3 ci_scripts/load_replay_demo.py <simulator-udid>
+```
+
+This replaces only tagged demo records in the local 24-hour history store.
+It leaves the upload queue and other history records alone. The 46-mile Portland
+to Salem fixture follows a route from the [Project OSRM demo service](https://router.project-osrm.org/)
+based on [OpenStreetMap data](https://www.openstreetmap.org/copyright).
+Its speeds are routing-profile estimates, not measured speeds or posted limits.
+
+Both `ci_scripts/smoke_test.sh` and `ci_scripts/idb_ui_test.sh` skip screenshots
+by default. Set `CAPTURE_SCREENSHOTS=1` only when you want a capture. The smoke
+script builds with two concurrent operations and lower scheduling priority.
+
+## Upstream contributions
+
+This fork incorporates work from Aaron Parecki and the upstream contributors:
+
+- [yniverz, PR #180](https://github.com/aaronpk/Overland-iOS/pull/180): precision,
+  filtering, stationary stopping, and subsequent pause/settings follow-ups.
+- [Rubeanie, PR #190](https://github.com/aaronpk/Overland-iOS/pull/190): custom HTTP
+  headers, adapted to this fork's request handling and SwiftUI settings.
+- [dietrichmax, PR #193](https://github.com/aaronpk/Overland-iOS/pull/193): Colota link.
+- [calebgab, PR #187](https://github.com/aaronpk/Overland-iOS/pull/187): Reitti link.
+- [weltspion, PR #195](https://github.com/aaronpk/Overland-iOS/pull/195): Geomanic listing.
+
+These are local integrations, not claims that upstream issues or PRs are closed.
+Replay retains only 24 hours; send diagnostics retain only the current session's
+last 50 outcomes. Real-device background delivery, battery use, WiFi identity
+access, purchases, VoiceOver, iPad layout, and older iOS versions need further
+validation.
 
 ## License
 
@@ -467,30 +579,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
-
-
-
-
-### Simulated route test
-
-```bash
-python3 ci_scripts/simulated_route_test.py /path/to/Overland.app
-```
-
-Requires Xcode's iOS 27 simulator runtime and IDB. Shut down other simulators first;
-the script refuses to start if any simulator is already booted. The script creates a disposable iPhone simulator,
-installs the supplied simulator build, grants simulated location/motion access, and records a fake
-Portland route against a localhost HTTP server. The first upload is deliberately rejected to exercise
-retry preservation. It checks trip recording and both stop-confirmation paths, then deletes only its
-own simulator. Results and synthetic request bodies are written to `/tmp/overland-fake-route-results.json`.
-It never uses the trial simulator or a production endpoint and takes no screenshots. Because permission
-is pre-granted, this test does not verify first-use permission prompts or real-device background delivery.
-
-The map's current-location dot has a decorative pulse. It stays static with Reduce Motion or Low Power
-Mode, and does not animate on an inactive map tab or while the app is inactive. The halo is not an
-accuracy-radius measurement. The native user-location control recenters the map, and live fixes
-recenter the camera while Tracker is following the user. Stopping recording through Tracker or Settings
-requires confirmation; Keep Tracking leaves recording enabled.
-
-`ci_scripts/idb_ui_test.sh` also skips screenshots by default. Set `CAPTURE_SCREENSHOTS=1` to opt in.
