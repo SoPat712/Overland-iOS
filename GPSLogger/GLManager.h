@@ -46,6 +46,7 @@ static NSString *const GLLoggingModeDefaultsName = @"GLLoggingModeDefaults";
 static NSString *const GLTripModeStatsDefaultsName = @"GLTripModeStats";
 static NSString *const GLVisitTrackingEnabledDefaultsName = @"GLVisitTrackingEnabledDefaults";
 static NSString *const GLLastTimeMovedBeyondStopThresholdDefaultsName = @"GLLastTimeMovedBeyondStopThresholdDefaults";
+static NSString *const GLDidPauseByRadiusDefaultsName = @"GLDidPauseByRadiusDefaults";
 
 static NSString *const GLPurgeQueueOnNextLaunchDefaultsName = @"GLPurgeQueueOnNextLaunch";
 static NSString *const GLLastScheduledNotificationDateDefaultsName = @"GLLastScheduledNotificationDateDefaults";
@@ -127,6 +128,7 @@ typedef void (^CaseBlock)(void);
 @property (nonatomic) CLLocationDistance resumesAfterDistance;
 @property (nonatomic) CLLocationDistance discardPointsWithinDistance;
 @property (nonatomic) CLLocationDistance stopsAutomaticallyRadius;
+@property (nonatomic, readonly) BOOL stopsAutomaticallyActive;
 @property (nonatomic) CLLocationAccuracy discardPointsOutsideAccuracy;
 @property (nonatomic) int stopsAutomaticallyAfterSeconds;
 @property (nonatomic) int discardPointsWithinSeconds;
@@ -139,6 +141,7 @@ typedef void (^CaseBlock)(void);
 @property (nonatomic) int pointsPerBatch;
 @property CLLocation* lastLocationMovedBeyondStopThreshold;
 @property NSDate* lastTimeMovedBeyondStopThreshold;
+@property (nonatomic) BOOL didPauseByRadius;
 
 /* During-Trip Settings */
 @property (nonatomic) CLLocationAccuracy desiredAccuracyDuringTrip;

@@ -95,9 +95,11 @@ struct SettingsView: View {
 
             Section {
                 SliderRow(title: "Stop Within Radius", value: $bridge.stopRadiusMeters, range: 0...1000, offBelow: 1, unit: "meters", format: SettingFormat.meters)
+                    .disabled(bridge.trackingModeIndex != 3 || bridge.pausesAutomatically)
                 SliderRow(title: "Stop After", value: $bridge.stopAfterValue, range: 30...3600, unit: "seconds", format: SettingFormat.seconds)
-                    .disabled(bridge.stopRadiusMeters < 1)
+                    .disabled(bridge.trackingModeIndex != 3 || bridge.pausesAutomatically || bridge.stopRadiusMeters < 1)
                 Toggle("Pause Updates Automatically", isOn: $bridge.pausesAutomatically)
+                    .disabled(bridge.stopRadiusMeters >= 1)
                 if bridge.pausesAutomatically {
                     SliderRow(title: "Resume After Moving", value: $bridge.resumeDistanceMeters, range: 0...2000, offBelow: 1, unit: "meters", format: SettingFormat.meters)
                 }

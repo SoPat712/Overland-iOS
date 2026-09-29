@@ -144,6 +144,9 @@ final class GLManagerBridge {
         }
         set {
             GLManager.shared().trackingMode = GLTrackingMode(rawValue: UInt32(newValue))
+            if newValue != 3 {
+                GLManager.shared().stopsAutomaticallyRadius = -1
+            }
             refresh()
         }
     }
@@ -248,7 +251,9 @@ final class GLManagerBridge {
         }
         set {
             GLManager.shared().pausesAutomatically = newValue
-            if !newValue {
+            if newValue {
+                GLManager.shared().stopsAutomaticallyRadius = -1
+            } else {
                 GLManager.shared().resumesAfterDistance = -1
             }
             refresh()
@@ -320,7 +325,12 @@ final class GLManagerBridge {
             return v > 0 ? v : 0
         }
         set {
-            GLManager.shared().stopsAutomaticallyRadius = newValue < 1 ? -1 : newValue.rounded()
+            let radius = newValue < 1 ? -1 : newValue.rounded()
+            GLManager.shared().stopsAutomaticallyRadius = radius
+            if radius > 0 {
+                GLManager.shared().pausesAutomatically = false
+                GLManager.shared().resumesAfterDistance = -1
+            }
             refresh()
         }
     }

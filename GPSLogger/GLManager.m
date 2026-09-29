@@ -1009,6 +1009,7 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
 
 - (void)disableTracking {
     self.trackingEnabled = NO;
+    self.didPauseByRadius = NO;
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(runEngineStandardUpdates) object:nil];
     for(CLRegion *region in self.locationManager.monitoredRegions) {
         if([region.identifier isEqualToString:@"resume-from-pause"]) [self.locationManager stopMonitoringForRegion:region];
@@ -1112,14 +1113,16 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
 #pragma mark - Scheduled local notifications
 
 - (void)scheduleLocalNotification {
-    // Schedule a local notification for 10 minutes into the future to remind the user to launch the app.
-    // We'll cancel the notification when we get an update from the system, so this should only
-    // run if the app is shut down for some reason.
+    // Receiving a location reschedules this reminder for ten minutes later.
+
+    if(!self.notificationsEnabled || self.stopsAutomaticallyActive) {
+        return;
+    }
     
     int scheduleRateLimit = 60;
     int reminderIntervalSeconds = 600;
     
-    // Only do this at most once a minute so we don't hammer the system with scheduled notification requests
+    // Limit notification-service requests to one per minute.
     NSDate *lastScheduled = self.lastScheduledNotificationDate;
     if(lastScheduled != nil && [lastScheduled timeIntervalSinceNow] > -1 * scheduleRateLimit) {
         return;
@@ -1568,6 +1571,12 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
     [[NSUserDefaults standardUserDefaults] setDouble:distance forKey:GLStopsAutomaticallyDefaultsName];
 }
 
+- (BOOL)stopsAutomaticallyActive {
+    return self.trackingMode == kGLTrackingModeStandardAndSignificant
+        && self.stopsAutomaticallyRadius != -1
+        && !self.pausesAutomatically;
+}
+
 - (int)stopsAutomaticallyAfterSeconds {
     if([self defaultsKeyExists:GLStopsAutomaticallyAfterDefaultsName]) {
         return (int)[[NSUserDefaults standardUserDefaults] integerForKey:GLStopsAutomaticallyAfterDefaultsName];
@@ -1577,6 +1586,14 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
 }
 - (void)setStopsAutomaticallyAfterSeconds:(int)seconds {
     [[NSUserDefaults standardUserDefaults] setInteger:seconds forKey:GLStopsAutomaticallyAfterDefaultsName];
+}
+
+- (BOOL)didPauseByRadius {
+    return [[NSUserDefaults standardUserDefaults] boolForKey:GLDidPauseByRadiusDefaultsName];
+}
+
+- (void)setDidPauseByRadius:(BOOL)didPause {
+    [[NSUserDefaults standardUserDefaults] setBool:didPause forKey:GLDidPauseByRadiusDefaultsName];
 }
 
 
@@ -2004,17 +2021,24 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
 - (void)processLocations:(NSArray *)locations {
 
     if(!self.trackingEnabled || locations.count == 0 || (!self.tripInProgress && self.trackingMode == kGLTrackingModeOff)) {
-        // This probably shouldn't happen, but just in case, don't log anything if they have tracking mode set to off
         return;
     }
 
-    // Just incase these wont be restarted after stopped and user moved significantly, make sure updates start again.
+    if(self.didPauseByRadius) {
+        self.didPauseByRadius = NO;
+        self.lastLocationMovedBeyondStopThreshold = nil;
+        self.lastTimeMovedBeyondStopThreshold = nil;
+        NSLog(@"Continuing loc updates");
+        [self notify:@"Location updates resumed." withTitle:@"Resumed"];
+    }
+
+    // Significant-change events restart standard updates after a stationary stop.
     if (!self.tripInProgress && self.trackingMode == kGLTrackingModeStandardAndSignificant) {
         [self runEngineStandardUpdates];
         [self.locationManager startMonitoringSignificantLocationChanges];
     }
         
-    // If a wifi override is configured, replace the input location list with the location in the wifi mapping
+    // A matching WiFi zone replaces the delivered fixes with its saved coordinates.
     if([GLManager currentWifiHotSpotName]) {
         NSDictionary *wifiInfo = [GLManager currentWifiNetworkInfo];
         CLLocation *wifiLocation = [self currentLocationFromWifiName:wifiInfo[@"SSID"] bssid:wifiInfo[@"BSSID"]];
@@ -2136,9 +2160,9 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
 
     }
     
-    // If stopsautomatically is active, update the saved location and time whenever user exits the radius.
-    // Also make sure that the location timestamp isnt older than 20 seconds to handle apple delivering locations late.
-    if (!self.tripInProgress && self.lastLocation && self.stopsAutomaticallyRadius > 0 && ([self.lastLocation.timestamp timeIntervalSinceNow] > -20 || !self.lastTimeMovedBeyondStopThreshold)) {
+    // Reset the stationary anchor after movement. Ignore delayed fixes older than
+    // 20 seconds once an anchor exists.
+    if (!self.tripInProgress && self.lastLocation && self.stopsAutomaticallyActive && ([self.lastLocation.timestamp timeIntervalSinceNow] > -20 || !self.lastTimeMovedBeyondStopThreshold)) {
         if ([self.lastLocationMovedBeyondStopThreshold distanceFromLocation:self.lastLocation] > self.stopsAutomaticallyRadius || !self.lastTimeMovedBeyondStopThreshold) {
             self.lastLocationMovedBeyondStopThreshold = self.lastLocation;
             self.lastTimeMovedBeyondStopThreshold = NSDate.now;
@@ -2146,11 +2170,9 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
     }
     
     
-    // if all necessary settings are activated, and user spent enough time within radius, stop location updates,
-    // and rely only on significant location change to signal movement and subsequent restarting of the updates.
-    // this will happen after around 500 meters, but will DRASTICALLY save battery life.
-    if (!self.tripInProgress && self.trackingMode == kGLTrackingModeStandardAndSignificant \
-        && self.stopsAutomaticallyRadius != -1 \
+    // Keep significant-change monitoring active so movement can restart standard
+    // updates. iOS controls when that event arrives.
+    if (!self.tripInProgress && self.stopsAutomaticallyActive \
         && self.lastTimeMovedBeyondStopThreshold \
         && [self.lastTimeMovedBeyondStopThreshold timeIntervalSinceNow] < -self.stopsAutomaticallyAfterSeconds) {
         
@@ -2158,6 +2180,8 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
         [self.locationManager stopUpdatingLocation];
         [self.locationManager stopUpdatingHeading];
         [self.locationManager startMonitoringSignificantLocationChanges];
+
+        self.didPauseByRadius = YES;
         
         NSLog(@"Stopping loc updates");
         [self notify:@"Location updates paused. Waiting for significant movement." withTitle:@"Paused"];
