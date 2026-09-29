@@ -351,9 +351,8 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
         NSMutableDictionary *payload = [NSMutableDictionary dictionaryWithDictionary:@{@"locations": locationUpdates}];
         postData = payload;
 
-        // Report the actual number of locations sent in this batch, since the value
-        // stored at queue time only reflects the size of the delegate callback.
-        // Objects from the database are immutable, so replace them with mutable copies.
+        // Recount the outgoing batch; the stored count describes the original callback.
+        // Database records need mutable copies before their metadata can change.
         for(int i=0; i<(int)locationUpdates.count; i++) {
             NSDictionary *update = locationUpdates[i];
             NSDictionary *properties = [update objectForKey:@"properties"];
@@ -365,8 +364,7 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
             [locationUpdates replaceObjectAtIndex:i withObject:newUpdate];
         }
         
-        // If there are still more in the queue, then send the current location as a separate property.
-        // This allows the server to know where the user is immediately even if there are many thousands of points in the backlog.
+        // Include the latest fix separately so a backlog does not hide the current location.
         if(_numInQueue > batchSize && self.lastLocation) {
             [payload setObject:[self currentDictionaryFromLocation:self.lastLocation] forKey:@"current"];
         }
@@ -496,11 +494,7 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
 
 }
 
-// iOS rejects a server certificate that a browser might accept: NSURLSession
-// does not fetch missing intermediates (no AIA fetching), so a domain served
-// through a CDN with the full chain can work while the same domain direct
-// from the origin fails. Surface the concrete trust errors so the server
-// side can be fixed.
+// Include trust-evaluation errors to help diagnose the server's certificate setup.
 + (NSString *)certificateFailureExplanation:(NSError *)error {
     NSMutableString *message = [NSMutableString stringWithString:@"The server's certificate could not be verified."];
 
@@ -508,7 +502,6 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
     if(trust) {
         CFErrorRef evaluateError = NULL;
         if(!SecTrustEvaluateWithError(trust, &evaluateError) && evaluateError) {
-            // walk the underlying error chain for each certificate problem
             NSError *current = (__bridge NSError *)evaluateError;
             int depth = 0;
             while(current && depth < 5) {
@@ -1094,8 +1087,6 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
     NSDate *lastAttempt = self.lastSendAttempt ?: self.lastSentDate;
     BOOL timeElapsed = !lastAttempt || -lastAttempt.timeIntervalSinceNow >= self.sendingInterval.doubleValue;
 
-    // Send if time has elapsed,
-    // or if we're in the middle of flushing
     if(timeElapsed || self.batchInProgress) {
         NSLog(@"Sending a batch now");
         [self sendQueueNow];
@@ -2047,9 +2038,6 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
         }
     }
     
-    // NSLog(@"Received %d locations", (int)locations.count);
-    
-    // NSLog(@"%@", locations);
     
     NSString *activityType = @"";
     switch(self.tripInProgress ? self.activityTypeDuringTrip : self.activityType) {
@@ -2088,7 +2076,6 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
         if(lastLocationSeen && self.discardPointsWithinDistanceCurrentValue > 0) {
             CLLocationDistance distanceBetweenPoints = [lastLocationSeen distanceFromLocation:loc];
             if(distanceBetweenPoints < self.discardPointsWithinDistanceCurrentValue) {
-                // NSLog(@"Discarding location because this point is too close to the previous: %f", distanceBetweenPoints);
                 continue;
             }
         }
@@ -2476,7 +2463,7 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSArray *zones = [defaults arrayForKey:GLWifiZonesDefaultsName];
     if(zones == nil) {
-        // migrate the single legacy wifi zone over to the list
+        // Preserve the saved location when migrating the legacy single-zone setting.
         NSString *name = [defaults objectForKey:@"WifiZoneName"];
         if(name) {
             NSDictionary *zone = @{@"name": name,

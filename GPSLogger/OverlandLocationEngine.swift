@@ -29,6 +29,7 @@ import CoreLocation
         let config = liveConfiguration(activityType: activityType)
         liveTask = Task { [weak self] in
             defer {
+                // A canceled task must not clear the task that replaced it.
                 if self?.generation == current {
                     self?.liveTask = nil
                     self?.runningActivity = nil

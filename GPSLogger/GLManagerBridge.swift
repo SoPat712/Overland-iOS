@@ -9,9 +9,8 @@ struct SendStatusEntry: Identifiable, Equatable {
     let kind: Kind
 }
 
-// Thin observable wrapper over GLManager. Views read live status here and
-// write settings through GLManager so its side effects (enableTracking etc.)
-// still run. ObjC can't be observed directly, so notifications bump a tick.
+// Notifications and polling refresh SwiftUI's view of the Objective-C manager.
+// Settings use its setters to preserve persistence and tracking changes.
 @Observable
 final class GLManagerBridge {
     static let shared = GLManagerBridge()
@@ -112,8 +111,7 @@ final class GLManagerBridge {
         return String(format: "%d:%02d", minutes, seconds)
     }
 
-    // Write-through bindings: settings changes go through GLManager so its
-    // side effects (enableTracking, persistence) run, then views refresh.
+    // MARK: Settings
 
     var usageProfile: Int {
         get {
@@ -517,7 +515,6 @@ final class GLManagerBridge {
 }
 
 extension View {
-    // Applies the iOS 26 glass button styles when available, bordered otherwise.
     @ViewBuilder
     func glassButtonStyle(prominent: Bool = false, tint: Color? = nil) -> some View {
         if #available(iOS 26.0, *) {
@@ -532,16 +529,6 @@ extension View {
             } else {
                 self.buttonStyle(.bordered).tint(tint)
             }
-        }
-    }
-
-    // Liquid Glass background card on iOS 26+, ultra-thin material below.
-    @ViewBuilder
-    func glassCard() -> some View {
-        if #available(iOS 26.0, *) {
-            self.glassEffect(.regular.interactive())
-        } else {
-            self.background(.ultraThinMaterial)
         }
     }
 }
