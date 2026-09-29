@@ -2130,11 +2130,12 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
         // Queue the point in the database
         [self.db accessCollection:GLLocationQueueName withBlock:^(id<LOLDatabaseAccessor> accessor) {
             if(self.loggingModeCurrentValue == kGLLoggingModeOnlyLatest) {
-                // Delete everything in the DB so that this new point is the only one in the queue after it's added below
+                // Only Latest intentionally replaces queued records, including unsent ones.
                 [accessor deleteAllData];
             }
             [accessor setDictionary:update forKey:[NSString stringWithFormat:@"%@-%@", timestamp, NSUUID.UUID.UUIDString]];
         }];
+        [RecentLocationHistory recordUpdate:update];
         didAddData = YES;
         
         if(self.tripInProgress && [loc.timestamp timeIntervalSinceDate:self.currentTripStart] >= 0  // only if the location is newer than the trip start
