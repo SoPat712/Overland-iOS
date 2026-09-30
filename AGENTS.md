@@ -29,7 +29,11 @@ nice -n 10 xcodebuild -jobs 2 -workspace Overland.xcworkspace -scheme Overland \
 ```
 
 Create a separate iPhone 17 Pro simulator named `Overland Regression` first.
-Tests use an in-memory queue and mocked `overland.test` requests. Do not run
+Tests use an in-memory queue and mocked `overland.test` requests.
+Background-runtime integration tests require location access on the disposable
+simulator. The system-reminder integration test also requires notification
+permission and `OVERLAND_NOTIFICATION_INTEGRATION=1` in the test scheme
+environment; otherwise it is skipped. Do not run
 these on a simulator containing important trial data; tests replace app preferences temporarily.
 
 ## Simulator resource limit
@@ -71,6 +75,11 @@ Only capture when the owner requests it; `CAPTURE_SCREENSHOTS=1` writes to `Scre
   accuracy or disabled pausing; liveUpdates cannot express those settings.
   Delegate paths also handle significant-change, region, and visit events.
   Live updates feed `-[GLManager processEngineLocation:]`.
+- **Background helpers**: `OverlandBackgroundRuntime` controls the ActivityKit
+  extension and opt-in `SilentAudioSession`. Live Activity staleness mirrors the
+  pending `reminder` notification deadline. Keep its scheduling rules in
+  `GLManager`; do not add a second location timeout. The shared ActivityAttributes
+  source belongs to both the app and `OverlandTrackingActivity` targets.
 - WiFi zones: `WifiZones` defaults key, array of `{name, latitude, longitude[,
   bssid]}` dicts; legacy single-zone keys migrate on first access. Matching is
   SSID-first, BSSID tiebreaker.

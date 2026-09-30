@@ -52,6 +52,41 @@ See [AGENTS.md](AGENTS.md) for build commands and [BATTERY_AUDIT.md](BATTERY_AUD
 for unresolved background-tracking findings. Battery improvements require device
 measurements; simulator checks do not establish energy savings.
 
+## Background runtime options
+
+Settings → Background Runtime adds two helpers that follow Start/Stop Tracking:
+
+- **Tracking Live Activity** defaults to Minimal, a location icon in the Dynamic
+  Island. Status also shows the last successful send in the expanded view.
+  Blank requests zero-sized content. Normal Lock Screen content is transparent
+  and empty; iOS may still reserve a surface. There is no documented switch to
+  restrict a Live Activity to the Dynamic Island.
+- **Silent Audio (Experimental)** defaults off. It loops digital silence through
+  the audio playback session and mixes with other audio. Calls can interrupt it.
+  If playback remains paused afterward, use Retry Background Helpers. It uses no
+  microphone and may increase battery use.
+
+The Live Activity uses the deadline of Overland's existing ten-minute location
+reminder. If that deadline passes, it shows the same request to open Overland;
+tapping it opens Tracker. Rescheduling or canceling the reminder updates the
+activity's deadline. The existing notification remains enabled by its own setting.
+This is a missed-update warning, not proof that the app was killed or the server
+is offline. The reminder's current suppression rules still apply, including
+suppression when stationary stopping is configured.
+
+Activities can be dismissed or disabled, and expire after at most eight active
+hours. Open Overland or use Retry Background Helpers to request another. The
+app cannot update an ended activity after it has been killed; iOS controls when
+it renders the warning from the previously supplied deadline.
+
+These helpers require tracking to be enabled with location access and an active
+tracking mode, visits, or a trip. They leave Core Location settings, stationary
+pausing, the upload queue, server payloads, and the existing background-location
+session intact. They do not guarantee continuous execution or bypass force-quit.
+Apple documents background audio for audible playback, so a silent keepalive may
+not meet App Store review requirements. See [BATTERY_AUDIT.md](BATTERY_AUDIT.md)
+for sources and the remaining device tests.
+
 ## Documentation
 
 ### Tracker screen
@@ -500,6 +535,8 @@ This assumes you have [Xcode](https://developer.apple.com/xcode/) and [Homebrew]
 * In Project Navigator, select *Overland*, and update Project Settings:
     * Identity → Bundle Identifier: *com.yourname.overland*
     * Signing → Team: *Personal Team*
+* Set the same signing team on *OverlandTrackingActivity* and give it a bundle
+  identifier beneath the app identifier, such as *com.yourname.overland.TrackingActivity*.
 * Plug in your iOS device
 * Product → Destination -> select your device
 * Product → Run (⌘R)

@@ -1,7 +1,8 @@
 # Battery and behavior audit
 
-Reviewed September 29, 2026. Investigation only: no battery or backend fixes
-were applied in this pass. The earlier, approved PR #180 follow-ups are included in this checkpoint.
+Reviewed September 29, 2026. Findings B-01 through B-06 remain proposals.
+The approved PR #180 follow-ups are included. The separately requested background
+runtime helpers are described below; they do not implement the battery repairs.
 
 ## What is known
 
@@ -114,68 +115,90 @@ incidental part of the proposed radius fix.
 
 ## Background execution and Live Activities
 
-Investigation only. No new background modes, Live Activity, or keepalive settings
-are enabled by this checkpoint.
+The owner authorized the following additions after this audit. Existing location
+sessions remain unchanged. `OverlandBackgroundRuntime` observes tracking,
+settings, authorization, send completion, and reminder changes. It controls an
+ActivityKit extension and an optional audio session. Neither helper rewrites
+tracking preferences, restarts a paused location engine, or participates in HTTP.
 
-The app already declares the `location` background mode. `GLManager.enableTracking`
-retains a `CLBackgroundActivitySession` through `OverlandLocationEngine`; Off,
-Significant-only, and explicit stop paths invalidate it. The radius-stop path
-currently retains it (B-02). The Show Background Indicator setting controls
-`CLLocationManager.showsBackgroundLocationIndicator`; it is separate from the
-retained session. A persistent indicator is not evidence that the app is receiving
-fresh fixes or sending them successfully.
+### Live Activity
 
-Apple describes [CLBackgroundActivitySession](https://developer.apple.com/documentation/corelocation/clbackgroundactivitysession-4nl4y)
-as a way to keep a When In Use app eligible for location events in the background.
-Its [background-location guidance](https://developer.apple.com/documentation/corelocation/handling-location-updates-in-the-background)
-still allows suspension and system termination. Correctly restoring location
-services on a background launch matters more than trying to prevent every
-suspension.
+Tracking Live Activity defaults on with a compact location icon. Status adds the
+last successful send time to the expanded Dynamic Island; Blank supplies
+zero-sized content. Normal Lock Screen content is empty and transparent. iOS
+still controls the surface and may reserve space. No documented API restricts an
+activity to the Dynamic Island.
 
-### Options
+The activity's `staleDate` comes from the pending notification whose identifier
+is `reminder`. When that deadline passes, the widget uses `context.isStale` to
+show the existing message: "Location updates were stopped. Launch the app to
+resume." Tapping the activity opens Tracker. Successful reminder scheduling and
+cancellation publish an observation event; the runtime reads the actual pending
+request rather than maintaining a second ten-minute timer. The original
+notification and its settings, throttling, and suppression rules remain intact.
+In particular, the suppression issue in B-05 is not repaired by this feature.
 
-- **Visible Live Activity:** Apple presents this as an alternative way to support
-  background location in [Discover streamlined location updates](https://developer.apple.com/videos/play/wwdc2023/10180/).
-  It could show tracking status while the app is off-screen. Adding one alongside
-  the existing session is not proven to improve reliability or save power.
-- **Invisible or zero-width Live Activity:** there is no documented hidden
-  keepalive API. Apple's [ActivityKit presentation guidance](https://developer.apple.com/videos/play/wwdc2023/10184/)
-  requires the Lock Screen and Dynamic Island presentations and describes
-  activities as visible, user-controlled status. A compact location icon is a
-  reasonable design; deliberately empty content is not a dependable execution
-  strategy.
-- **Silent looping audio:** reject this for Overland. Apple's [background-mode
-  reference](https://developer.apple.com/documentation/xcode/configuring-background-execution-modes)
-  defines the audio mode for audible playback, and [App Review guideline 2.5.4](https://developer.apple.com/app-store/review/guidelines/#software-requirements)
-  limits background services to their intended purposes. An audio loop also adds
-  work whose energy cost would need measurement. It does not repair a location
-  lifecycle bug.
-- **Scheduled background tasks:** useful for deferred work, not a reliable
-  continuous-location or exact-send-interval mechanism. Apple notes that these
-  tasks are not immediate in its [Live Activities Q&A](https://developer.apple.com/news/?id=qpqf1gru).
+A missed reminder deadline cannot distinguish a killed app from suspension,
+missing fixes, or another collection problem. It does not detect network loss.
+The stale presentation can be rendered by iOS without executing the app, but
+rendering time is not an exact alarm. No visible warning is possible once the
+activity has ended or been dismissed.
 
-A Live Activity lasts at most eight active hours under the current
-[ActivityKit documentation](https://developer.apple.com/documentation/activitykit/displaying-live-data-with-live-activities).
-People can disable or dismiss it. Its extension cannot fetch location or make
-network requests itself; the app supplies updates, or a server supplies ActivityKit
-push notifications. Therefore an always-on tracker must continue to work when the
-activity is unavailable or has ended.
+Creation is restricted to the foreground. Existing activities are adopted on
+relaunch; stopping tracking, losing location access, or disabling the option ends
+them. Expiry and dismissal do not trigger a background restart loop. Reopening
+Overland or pressing Retry requests another activity. Send-time updates are
+limited to one per thirty seconds; appearance, trip, and reminder-deadline
+changes apply immediately. There is no activity polling timer or APNs dependency.
 
-### Proposed Settings option, pending approval
+### Silent audio
 
-Add **Show Tracking Status** with a small location icon in the compact Dynamic
-Island presentation. The Lock Screen view would show tracking state and the last
-successful send time, without coordinates or a device identifier. Tapping it
-would open Tracker. A default-on preference is reasonable only for this visible
-status feature after the user starts tracking, with iOS authorization respected.
+Silent Audio is an experimental, default-off option. `SilentAudioSession` creates
+a one-second PCM buffer of zeros and loops it with `AVAudioPlayer`, using the
+playback category and mixing with other apps. A serial background queue owns
+audio-session and player calls so they do not block the main thread. It uses no microphone. Stopping
+tracking or losing location access stops playback and releases the audio session.
+Interruption handling honors the system's resume indication; explicit Retry can
+recover from a missing interruption-ended event. There is no periodic retry loop.
 
-Use existing location/send events to update it, without a new polling timer or
-APNs dependency. End it when tracking stops. Dismissing or expiring the activity
-must not stop tracking, change presets, or rewrite server settings. Retain the
-existing background session while evaluating the feature; replacing that session
-would be a separate behavior change requiring approval and device tests.
+[StikDebug uses silent audio](https://github.com/StikDebug/StikDebug/blob/main/StikDebug/Services/BackgroundAudioManager.swift)
+with a different audio-engine implementation. Its source is AGPL-3.0; no code or
+assets were copied into Overland. Overland's implementation uses Apple's public
+audio APIs. SuperAlarm's claimed zero-content implementation was not verified
+from public source.
 
-This design requires an ActivityKit/WidgetKit extension and lifecycle handling.
-It does not require changes to Dawarich or OwnTracks requests. Test denied Live
-Activity permission, dismissal, expiry, locked-screen recording, process relaunch,
-and battery use on a physical device before treating it as a reliability feature.
+Apple's [background-mode reference](https://developer.apple.com/documentation/xcode/configuring-background-execution-modes)
+describes audio mode for audible playback, and [App Review guideline 2.5.4](https://developer.apple.com/app-store/review/guidelines/#software-requirements)
+limits background services to their intended purposes. Silent keepalive may not
+meet App Store review requirements. Its battery cost has not been measured.
+
+### Platform limits and validation
+
+Apple describes a Live Activity or `CLBackgroundActivitySession` as support for
+background location in [Discover streamlined location updates](https://developer.apple.com/videos/play/wwdc2023/10180/).
+Overland already retains the latter. Its [background-location guidance](https://developer.apple.com/documentation/corelocation/handling-location-updates-in-the-background)
+still allows suspension and system termination. Adding helpers alongside that
+session is not evidence of improved reliability.
+
+[ActivityKit documentation](https://developer.apple.com/documentation/activitykit/displaying-live-data-with-live-activities)
+limits an activity to eight active hours. People can dismiss or disable it, and
+its extension cannot fetch location or make network requests. None of these
+helpers bypass force-quit or permissions.
+
+Physical-device validation remains necessary for locked-screen routes, calls,
+other audio playback, process termination, activity expiry/dismissal, and energy
+use. Compare route coverage and battery use with identical tracking settings and
+helpers individually enabled. Simulator lifecycle tests cannot establish battery
+savings or continuous background delivery.
+
+Simulator checks passed for audio start/stop, interruption resume, explicit retry,
+and Live Activity creation, appearance changes, and cleanup when tracking stops.
+The 25 existing queue, HTTP, settings, and location regressions also passed.
+Accessibility-driven app checks verified the appearance selector, audio gating,
+start/stop cleanup, stop confirmation, and the Tracker deep link without screenshots.
+The system-reminder integration check remains unverified: on this iOS 27
+simulator, notification calls stalled inside `usernotificationsd` while it waited
+for its notification-settings service. Restarting the disposable simulator did
+not clear that wait. The opt-in test remains in `BackgroundRuntimeTests.swift`
+for an environment with a responding notification service. No screenshot or
+simulator result establishes the real-device appearance or battery benefit.
