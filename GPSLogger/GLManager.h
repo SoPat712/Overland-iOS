@@ -11,6 +11,8 @@
 #import <CoreMotion/CoreMotion.h>
 @import UserNotifications;
 
+static NSString *const GLReminderChangedNotification = @"GLReminderChangedNotification";
+static NSString *const GLTrackingStateChangedNotification = @"GLTrackingStateChangedNotification";
 static NSString *const GLNewDataNotification = @"GLNewDataNotification";
 static NSString *const GLNewActivityNotification = @"GLNewActivityNotification";
 static NSString *const GLAuthorizationStatusChangedNotification = @"GLAuthorizationStatusChangedNotification";

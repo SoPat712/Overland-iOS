@@ -128,6 +128,30 @@ struct SettingsView: View {
             }
 
             Section {
+                Toggle("Tracking Live Activity", isOn: $bridge.liveActivityEnabled)
+                if bridge.liveActivityEnabled {
+                    Picker("Dynamic Island Appearance", selection: $bridge.liveActivityAppearance) {
+                        Text("Status").tag("status")
+                        Text("Minimal").tag("minimal")
+                        Text("Blank (Experimental)").tag("blank")
+                    }
+                    LabeledContent("Live Activity", value: bridge.liveActivityStatus)
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                Toggle("Silent Audio (Experimental)", isOn: $bridge.silentAudioEnabled)
+                if bridge.silentAudioEnabled {
+                    LabeledContent("Audio", value: bridge.silentAudioStatus)
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                Button("Retry Background Helpers") { bridge.retryBackgroundRuntime() }
+                    .disabled(!bridge.trackingEnabled)
+            } header: {
+                SettingsSectionHeader(title: "Background Runtime", topic: .runtime)
+            } footer: {
+                Text("The Live Activity uses the existing location reminder to ask you to reopen Overland. Its normal Lock Screen content is empty, but iOS may still reserve space. Silent audio can use more battery. These options run only while tracking has location access.")
+            }
+
+            Section {
                 NavigationLink("WiFi Zones", value: SettingsDestination.wifiZones)
                 Toggle("Notifications", isOn: $bridge.notifications)
             } header: {

@@ -75,10 +75,13 @@ private struct SettingExplanation {
 }
 
 private enum SettingsSource {
-    case accuracy, activity, significant, background, coreLocation, readme, implementation
+    case accuracy, activity, significant, background, coreLocation, readme, implementation, activityKit, audio, stikDebug
 
     var title: String {
         switch self {
+        case .activityKit: return "Apple: Live Activities"
+        case .audio: return "Apple: Background execution modes"
+        case .stikDebug: return "StikDebug: Silent audio implementation"
         case .accuracy: return "Apple: Desired accuracy"
         case .activity: return "Apple: Activity type"
         case .significant: return "Apple: Significant-change monitoring"
@@ -92,6 +95,9 @@ private enum SettingsSource {
     var url: URL {
         let path: String
         switch self {
+        case .activityKit: path = "https://developer.apple.com/documentation/activitykit/displaying-live-data-with-live-activities"
+        case .audio: path = "https://developer.apple.com/documentation/xcode/configuring-background-execution-modes"
+        case .stikDebug: path = "https://github.com/StikDebug/StikDebug/blob/main/StikDebug/Services/BackgroundAudioManager.swift"
         case .accuracy: path = "https://developer.apple.com/documentation/corelocation/cllocationmanager/desiredaccuracy"
         case .activity: path = "https://developer.apple.com/documentation/corelocation/cllocationmanager/activitytype"
         case .significant: path = "https://developer.apple.com/documentation/corelocation/cllocationmanager/startmonitoringsignificantlocationchanges()"
@@ -105,6 +111,7 @@ private enum SettingsSource {
 }
 
 enum SettingsHelpTopic: String {
+    case runtime = "Background Runtime"
     case presets = "Usage Presets"
     case permissions = "Permissions"
     case tracking = "Tracking"
@@ -158,6 +165,13 @@ enum SettingsHelpTopic: String {
                 .init("Logging Mode", "All Data queues GeoJSON records. Only Latest deliberately replaces queued location data with the latest update. OwnTracks uses OwnTracks JSON and sends one location per request; unsent fixes stay queued. Select the format your server accepts.", .implementation),
                 .init("Locations per Batch", "Limits the number of queued records in a GeoJSON request. Smaller batches make smaller requests; larger ones can drain a backlog with fewer requests. OwnTracks sends one point at a time regardless of this setting.", .implementation),
                 .init("Send Interval / Send Every", "Automatic sends are considered when locations arrive after this interval. This is not an exact background timer. Off means manual sending. Failed attempts retain their points; Last Sent changes only after the server acknowledges success.", .implementation)
+            ]
+        case .runtime:
+            return [
+                .init("Tracking Live Activity", "Starts while tracking is enabled and Overland is in the foreground. Minimal is on by default. Status adds the last successful send time in the expanded Dynamic Island; Blank supplies zero-sized content. Normal Lock Screen content is empty. iOS controls visibility and can still reserve space. Activities expire after up to eight hours and can be dismissed. Open Overland or tap Retry to start another; tracking itself continues independently.", .activityKit),
+                .init("Open Overland reminder", "Uses the same deadline as the existing ten-minute location reminder. When it passes, the Live Activity shows the same message asking you to open Overland. Tap it to open Tracker. The notification remains controlled by Notifications, and its existing suppression rules still apply. A missed deadline cannot prove the app was killed or the server is offline. iOS controls when the warning appears, and cannot show it after the activity ends or is dismissed.", .activityKit),
+                .init("Silent Audio", "An optional loop of digital silence using the audio playback background mode. It mixes with other audio, uses no microphone, and stops when tracking stops or location access is lost. Calls and audio interruptions can pause it. If playback stays paused, use Retry Background Helpers. This is an experimental keepalive technique, not a guarantee or a battery improvement.", .stikDebug),
+                .init("Distribution and reliability", "Apple documents the audio background mode for audible playback. A silent keepalive may conflict with App Store review requirements. Blank Live Activities are also experimental. These options do not bypass force-quit, permissions, system termination, or your existing stationary-pause settings. Test background recording on a physical device.", .audio)
             ]
         case .background:
             return [

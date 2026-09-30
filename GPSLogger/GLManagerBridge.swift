@@ -34,7 +34,8 @@ final class GLManagerBridge {
     private init() {
         let nc = NotificationCenter.default
         for name in [GLNewDataNotification, GLSendingStartedNotification, GLSendingFinishedNotification,
-                     GLSettingsChangedNotification, GLAuthorizationStatusChangedNotification, GLNewActivityNotification] {
+                     GLSettingsChangedNotification, GLAuthorizationStatusChangedNotification, GLNewActivityNotification,
+                     GLTrackingStateChangedNotification] {
             nc.addObserver(forName: Notification.Name(name), object: nil, queue: .main) { [weak self] _ in
                 self?.refresh()
             }
@@ -209,6 +210,35 @@ final class GLManagerBridge {
             refresh()
         }
     }
+
+    @MainActor var liveActivityEnabled: Bool {
+        get {
+            _ = tick
+            return OverlandBackgroundRuntime.shared.liveActivityEnabled
+        }
+        set { OverlandBackgroundRuntime.shared.liveActivityEnabled = newValue; refresh() }
+    }
+
+    @MainActor var liveActivityAppearance: String {
+        get {
+            _ = tick
+            return OverlandBackgroundRuntime.shared.appearance
+        }
+        set { OverlandBackgroundRuntime.shared.appearance = newValue; refresh() }
+    }
+
+    @MainActor var silentAudioEnabled: Bool {
+        get {
+            _ = tick
+            return OverlandBackgroundRuntime.shared.silentAudioEnabled
+        }
+        set { OverlandBackgroundRuntime.shared.silentAudioEnabled = newValue; refresh() }
+    }
+
+    @MainActor var liveActivityStatus: String { OverlandBackgroundRuntime.shared.activityStatus }
+    @MainActor var silentAudioStatus: String { OverlandBackgroundRuntime.shared.audioStatus }
+
+    @MainActor func retryBackgroundRuntime() { OverlandBackgroundRuntime.shared.retry() }
 
     var backgroundIndicator: Bool {
         get {

@@ -8,15 +8,27 @@
         A01100000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Tests/OverlandTests.m; sourceTree = SOURCE_ROOT; };
         A01100000000000000000002 = {isa = PBXBuildFile; fileRef = A01100000000000000000001; };
         A01100000000000000000003 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = OverlandTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-        A01100000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A01100000000000000000002,); runOnlyForDeploymentPostprocessing = 0; };
+        A01100000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A01100000000000000000002,B08800000000000000000041,); runOnlyForDeploymentPostprocessing = 0; };
         A01100000000000000000005 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
         A01100000000000000000006 = {isa = PBXNativeTarget; buildConfigurationList = A01100000000000000000007; buildPhases = (A01100000000000000000004,A01100000000000000000005,); buildRules = (); dependencies = (A0110000000000000000000B,); name = OverlandTests; productName = OverlandTests; productReference = A01100000000000000000003; productType = "com.apple.product-type.bundle.unit-test"; };
         A01100000000000000000007 = {isa = XCConfigurationList; buildConfigurations = (A01100000000000000000008,A01100000000000000000009,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-        A01100000000000000000008 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; HEADER_SEARCH_PATHS = ("$(SRCROOT)/GPSLogger","$(SRCROOT)/Pods/FMDB/src/fmdb",); FRAMEWORK_SEARCH_PATHS = ("$(inherited)","$(PLATFORM_DIR)/Developer/Library/Frameworks",); OTHER_LDFLAGS = ("-framework",XCTest,); IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.aaronpk.overland.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Overland.app/Overland"; }; name = Debug; };
-        A01100000000000000000009 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; HEADER_SEARCH_PATHS = ("$(SRCROOT)/GPSLogger","$(SRCROOT)/Pods/FMDB/src/fmdb",); FRAMEWORK_SEARCH_PATHS = ("$(inherited)","$(PLATFORM_DIR)/Developer/Library/Frameworks",); OTHER_LDFLAGS = ("-framework",XCTest,); IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.aaronpk.overland.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Overland.app/Overland"; }; name = Release; };
+        A01100000000000000000008 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; SWIFT_VERSION = 5.0; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; HEADER_SEARCH_PATHS = ("$(SRCROOT)/GPSLogger","$(SRCROOT)/Pods/FMDB/src/fmdb",); FRAMEWORK_SEARCH_PATHS = ("$(inherited)","$(PLATFORM_DIR)/Developer/Library/Frameworks",); OTHER_LDFLAGS = ("-framework",XCTest,); IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.aaronpk.overland.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Overland.app/Overland"; }; name = Debug; };
+        A01100000000000000000009 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; SWIFT_VERSION = 5.0; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; HEADER_SEARCH_PATHS = ("$(SRCROOT)/GPSLogger","$(SRCROOT)/Pods/FMDB/src/fmdb",); FRAMEWORK_SEARCH_PATHS = ("$(inherited)","$(PLATFORM_DIR)/Developer/Library/Frameworks",); OTHER_LDFLAGS = ("-framework",XCTest,); IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.aaronpk.overland.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Overland.app/Overland"; }; name = Release; };
         A0110000000000000000000A = {isa = PBXContainerItemProxy; containerPortal = 0FFD314A1BAB7A34009B3A03; proxyType = 1; remoteGlobalIDString = 0FFD31511BAB7A34009B3A03; remoteInfo = Overland; };
         A0110000000000000000000B = {isa = PBXTargetDependency; target = 0FFD31511BAB7A34009B3A03; targetProxy = A0110000000000000000000A; };
 
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B08800000000000000000018 /* Embed App Extensions */ = { isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (B08800000000000000000010,); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		B08800000000000000000019 /* PBXContainerItemProxy */ = { isa = PBXContainerItemProxy; containerPortal = 0FFD314A1BAB7A34009B3A03; proxyType = 1; remoteGlobalIDString = B0880000000000000000001B; remoteInfo = OverlandTrackingActivity; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		B0880000000000000000001A /* PBXTargetDependency */ = { isa = PBXTargetDependency; target = B0880000000000000000001B; targetProxy = B08800000000000000000019; };
+/* End PBXTargetDependency section */
 
 /* Begin PBXBuildFile section */
 		A05500000000000000000002 /* NativeTabController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A05500000000000000000001 /* NativeTabController.swift */; };
@@ -64,6 +76,13 @@
 		0FFD317F1BAB7CC7009B3A03 /* LOLDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = 0FFD317E1BAB7CC7009B3A03 /* LOLDatabase.m */; };
 		6D2858D1222B133400F525E1 /* WifiZoneViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D2858D0222B133400F525E1 /* WifiZoneViewController.m */; };
 		F87824B3678FD75F13286822 /* libPods-Overland.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E0A408349E469AC6E6DA46BA /* libPods-Overland.a */; };
+		B0880000000000000000000B /* BackgroundRuntime.swift in Sources */ = { isa = PBXBuildFile; fileRef = B08800000000000000000001; };
+		B0880000000000000000000C /* SilentAudioSession.swift in Sources */ = { isa = PBXBuildFile; fileRef = B08800000000000000000002; };
+		B0880000000000000000000D /* TrackingActivityAttributes.swift in Sources */ = { isa = PBXBuildFile; fileRef = B08800000000000000000003; };
+		B0880000000000000000000E /* TrackingActivityWidget.swift in Sources */ = { isa = PBXBuildFile; fileRef = B08800000000000000000004; };
+		B0880000000000000000000F /* TrackingActivityAttributes.swift in Sources */ = { isa = PBXBuildFile; fileRef = B08800000000000000000003; };
+		B08800000000000000000010 /* OverlandTrackingActivity.appex in Embed App Extensions */ = { isa = PBXBuildFile; fileRef = B08800000000000000000005; settings = {ATTRIBUTES = (RemoveHeadersOnCopy,); }; };
+		B08800000000000000000041 /* BackgroundRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B08800000000000000000040; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -136,6 +155,13 @@
 		6DEC9B3621F3F88500D9E8C4 /* Overland.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Overland.entitlements; sourceTree = "<group>"; };
 		E0A408349E469AC6E6DA46BA /* libPods-Overland.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Overland.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4DFFAB32440A8511E1D869A /* Pods-Overland.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Overland.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Overland/Pods-Overland.debug.xcconfig"; sourceTree = "<group>"; };
+		B08800000000000000000001 /* BackgroundRuntime.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSLogger/BackgroundRuntime.swift; sourceTree = SOURCE_ROOT; };
+		B08800000000000000000002 /* SilentAudioSession.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSLogger/SilentAudioSession.swift; sourceTree = SOURCE_ROOT; };
+		B08800000000000000000003 /* TrackingActivityAttributes.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/TrackingActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
+		B08800000000000000000004 /* TrackingActivityWidget.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingActivity/TrackingActivityWidget.swift; sourceTree = SOURCE_ROOT; };
+		B08800000000000000000005 /* OverlandTrackingActivity.appex */ = { isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; path = OverlandTrackingActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B08800000000000000000006 /* Info.plist */ = { isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = TrackingActivity/Info.plist; sourceTree = SOURCE_ROOT; };
+		B08800000000000000000040 /* BackgroundRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/BackgroundRuntimeTests.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -155,6 +181,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B08800000000000000000016 /* Frameworks */ = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -191,6 +218,8 @@
 			isa = PBXGroup;
 			children = (
                 A01100000000000000000001,
+				B08800000000000000000040 /* BackgroundRuntimeTests.swift */,
+				B08800000000000000000014 /* TrackingActivity */,
 				6DEC9B3621F3F88500D9E8C4 /* Overland.entitlements */,
 				0FFD31541BAB7A34009B3A03 /* GPSLogger */,
 				0F3E520D201E515800DCFAA4 /* Fonts */,
@@ -204,6 +233,7 @@
 			isa = PBXGroup;
 			children = (
 				0FFD31521BAB7A34009B3A03 /* Overland.app */,
+				B08800000000000000000005 /* OverlandTrackingActivity.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -211,6 +241,8 @@
 		0FFD31541BAB7A34009B3A03 /* GPSLogger */ = {
 			isa = PBXGroup;
 			children = (
+				B08800000000000000000001 /* BackgroundRuntime.swift */,
+				B08800000000000000000002 /* SilentAudioSession.swift */,
 				0FCF53231F81AAAC00577A0F /* GPSLogger.entitlements */,
 				0FFD31581BAB7A34009B3A03 /* AppDelegate.h */,
 				0FFD31591BAB7A34009B3A03 /* AppDelegate.m */,
@@ -291,6 +323,7 @@
 			name = Pods;
 			sourceTree = "<group>";
 		};
+		B08800000000000000000014 /* TrackingActivity */ = { isa = PBXGroup; children = (B08800000000000000000003,B08800000000000000000004,B08800000000000000000006,); name = TrackingActivity; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -302,16 +335,19 @@
 				0FFD314E1BAB7A34009B3A03 /* Sources */,
 				0FFD314F1BAB7A34009B3A03 /* Frameworks */,
 				0FFD31501BAB7A34009B3A03 /* Resources */,
+				B08800000000000000000018 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B0880000000000000000001A /* PBXTargetDependency */,
 			);
 			name = Overland;
 			productName = GPSLogger;
 			productReference = 0FFD31521BAB7A34009B3A03 /* Overland.app */;
 			productType = "com.apple.product-type.application";
 		};
+		B0880000000000000000001B /* OverlandTrackingActivity */ = { isa = PBXNativeTarget; buildConfigurationList = B0880000000000000000001C; buildPhases = (B08800000000000000000015,B08800000000000000000016,B08800000000000000000017,); buildRules = (); dependencies = (); name = OverlandTrackingActivity; productName = OverlandTrackingActivity; productReference = B08800000000000000000005; productType = "com.apple.product-type.app-extension"; };
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -354,6 +390,7 @@
 			projectRoot = "";
 			targets = (
                 A01100000000000000000006,
+				B0880000000000000000001B /* OverlandTrackingActivity */,
 				0FFD31511BAB7A34009B3A03 /* Overland */,
 			);
 		};
@@ -374,6 +411,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B08800000000000000000017 /* Resources */ = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -402,6 +440,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B0880000000000000000000B /* BackgroundRuntime.swift in Sources */,
+				B0880000000000000000000C /* SilentAudioSession.swift in Sources */,
+				B0880000000000000000000D /* TrackingActivityAttributes.swift in Sources */,
 				0FFD31601BAB7A34009B3A03 /* SettingsViewController.m in Sources */,
 				0FFD315A1BAB7A34009B3A03 /* AppDelegate.m in Sources */,
 				6D2858D1222B133400F525E1 /* WifiZoneViewController.m in Sources */,
@@ -434,6 +475,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B08800000000000000000015 /* Sources */ = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B0880000000000000000000E,B0880000000000000000000F,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
@@ -615,6 +657,8 @@
 			};
 			name = Release;
 		};
+		B0880000000000000000001D /* Debug */ = { isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CLANG_ENABLE_MODULES = YES; CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = 7MC6UZR2UV; INFOPLIST_FILE = TrackingActivity/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)","@executable_path/Frameworks","@executable_path/../../Frameworks",); PRODUCT_BUNDLE_IDENTIFIER = com.aaronpk.overland.TrackingActivity; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
+		B0880000000000000000001E /* Release */ = { isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CLANG_ENABLE_MODULES = YES; CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = 7MC6UZR2UV; INFOPLIST_FILE = TrackingActivity/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)","@executable_path/Frameworks","@executable_path/../../Frameworks",); PRODUCT_BUNDLE_IDENTIFIER = com.aaronpk.overland.TrackingActivity; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -636,6 +680,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		B0880000000000000000001C /* Build configuration list for OverlandTrackingActivity */ = { isa = XCConfigurationList; buildConfigurations = (B0880000000000000000001D,B0880000000000000000001E,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 	};
 	rootObject = 0FFD314A1BAB7A34009B3A03 /* Project object */;

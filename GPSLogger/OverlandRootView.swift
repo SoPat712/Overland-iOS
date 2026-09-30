@@ -79,6 +79,10 @@ struct OverlandRootView: View {
             if phase == .active { history.reload() }
             else { history.pause() }
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OverlandOpenTracker"))) { _ in
+            selection = 0
+            selectTab(0)
+        }
         .onAppear { history.reload() }
         .tint(.blue)
     }

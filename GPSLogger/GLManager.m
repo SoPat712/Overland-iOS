@@ -998,6 +998,7 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
     NSLog(@"Location Authorization Status %@", self.authorizationStatusAsString);
     
     [self scheduleLocalNotification];
+    [[NSNotificationCenter defaultCenter] postNotificationName:GLTrackingStateChangedNotification object:self];
 }
 
 - (void)disableTracking {
@@ -1019,6 +1020,7 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
         self.lastMotion = nil;
     }
     [self cancelLocalNotification];
+    [[NSNotificationCenter defaultCenter] postNotificationName:GLTrackingStateChangedNotification object:self];
 }
 
 - (void)sendingStarted {
@@ -1135,7 +1137,10 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
     UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
     dispatch_async(GLNotificationQueue(), ^{
         [center addNotificationRequest:request withCompletionHandler:^(NSError *error) {
-            if(!error) self.lastScheduledNotificationDate = NSDate.now;
+            if(!error) {
+                self.lastScheduledNotificationDate = NSDate.now;
+                [[NSNotificationCenter defaultCenter] postNotificationName:GLReminderChangedNotification object:self];
+            }
         }];
     });
 }
@@ -1144,6 +1149,7 @@ static NSDictionary *GLUsageProfileSettings(NSInteger profile) {
     UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
     dispatch_async(GLNotificationQueue(), ^{
         [center removePendingNotificationRequestsWithIdentifiers:@[@"reminder"]];
+        [[NSNotificationCenter defaultCenter] postNotificationName:GLReminderChangedNotification object:self];
     });
 }
 

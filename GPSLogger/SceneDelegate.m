@@ -38,6 +38,9 @@
     UIOpenURLContext *context = [URLContexts anyObject];
     NSURL *url = context.URL;
     
+    if([[url host] isEqualToString:@"tracker"]) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"OverlandOpenTracker" object:nil];
+    }
     if([[url host] isEqualToString:@"setup"]) {
         NSURLComponents *urlComponents = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
         NSArray *queryItems  = urlComponents.queryItems;

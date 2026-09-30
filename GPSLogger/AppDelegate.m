@@ -8,6 +8,7 @@
 
 #import "AppDelegate.h"
 #import "GLManager.h"
+#import "Overland-Swift.h"
 #import "NSArray+map.h"
 
 @interface AppDelegate ()
@@ -41,6 +42,7 @@
     NSLog(@"Application launched with options: %@", launchOptions);
     
     [GLManager sharedManager];
+    [[OverlandBackgroundRuntime shared] start];
     
     if([launchOptions objectForKey:UIApplicationLaunchOptionsLocationKey]) {
         [[GLManager sharedManager] logAction:@"application_launched_with_location"];
